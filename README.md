@@ -1,7 +1,5 @@
 # akka-crashcourse
 
-[![Stories in Ready](https:///scala-academy/akka-crashcourse.png?label=ready&title=Ready)](https://waffle.io/scala-academy/akka-crashcourse)
-
 Project for getting a feeling of Akka for a small group of engineers
 
 Basic idea is to together develop a game server that hosts games of Battleship.
