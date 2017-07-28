@@ -12,9 +12,9 @@ object LinearPlayer extends Player {
     (x, y)
   }
 
-  override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatPlacement)] = {
+  override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = {
     for (boat <- boats) require(boat.size <= boardSize, s"Cannot place $boat on board with size $boardSize")
-    (for (i <- boats.indices) yield (boats(i), BoatPlacement(0, i, isHorizontal = true))).toSet
+    (for (i <- boats.indices) yield (boats(i), BoatLocation(0, i, isHorizontal = true))).toSet
   }
 
   override def name: String = "LinearPlayer"

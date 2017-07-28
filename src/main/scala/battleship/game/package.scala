@@ -5,14 +5,6 @@ package battleship
   */
 package object game {
 
-  case class Boat(size: Int) {
-    def coordinates(placement: BoatPlacement): Seq[(Int, Int)] =
-      if (placement.isHorizontal) (0 to size).map(i => (placement.x, placement.y + i))
-      else (0 to size).map(i => (placement.x + i, placement.y))
-
-    def liesOn(placement: BoatPlacement, x: Int, y: Int): Boolean = coordinates(placement).contains((x, y))
-  }
-
   /**
     * Coordinates start at 0
     */
@@ -28,10 +20,10 @@ package object game {
 
   type Shot = (Coordinate, ShotResult)
 
-  case class BoatPlacement(x: Int, y: Int, isHorizontal: Boolean)
+  case class BoatLocation(x: Int, y: Int, isHorizontal: Boolean)
 
   trait Player {
-    def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatPlacement)]
+    def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)]
 
     def getNextShot(boardSize: Int, shotHistory: Seq[Shot]): Coordinate
 

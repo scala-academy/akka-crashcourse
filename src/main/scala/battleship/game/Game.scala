@@ -7,7 +7,7 @@ object Game {
 
   var id = 0
 
-  def nextId = {
+  def nextId: Int = {
     id += 1
     id
   }
@@ -16,7 +16,7 @@ object Game {
 
   val defaultBoardSize = 8
 
-  def create(player1: Player, player2: Player, boardSize: Int = defaultBoardSize, allBoats: Seq[Boat] = defaultBoatSet) = {
+  def create(player1: Player, player2: Player, boardSize: Int = defaultBoardSize, allBoats: Seq[Boat] = defaultBoatSet): Game = {
     new Game(player1, player2, defaultBoardSize, allBoats, nextId)
   }
 }
@@ -29,13 +29,7 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
   var winner: Option[Player] = None
 
   def play(): Unit = {
-    val player1Placements = player1.placeBoats(allBoats, boardSize)
-    val player2Placements = player2.placeBoats(allBoats, boardSize)
-
-    for ((boat, placement) <- player2Placements) player1Board = player1Board.placeBoat(boat, placement)
-    for ((boat, placement) <- player1Placements) player2Board = player2Board.placeBoat(boat, placement)
-
-    var players: Seq[(Player, BoardState)] = Seq((player1, player1Board), (player2, player2Board))
+    var players: Seq[(Player, BoardState)] = initPlayers
 
     def currentPlayer = players.head
 
@@ -46,6 +40,7 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
         case Sink(boat) => println(s"${currentPlayer.player}: Sunk boat $boat at $nextShot")
         case _ =>
       }
+
       val newBoard = currentPlayer.shoot(nextShot)
       players = players.tail ++ Seq((currentPlayer.player, newBoard))
     }
@@ -55,6 +50,19 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
     println(s"Winner: ${winner.get}")
   }
 
+  def initPlayers: Seq[(Player, BoardState)] = {
+    val player1Placements = player1.placeBoats(allBoats, boardSize)
+    val player2Placements = player2.placeBoats(allBoats, boardSize)
+
+    for ((boat, location) <- player2Placements) player1Board = player1Board.placeBoat(boat, location)
+    for ((boat, location) <- player1Placements) player2Board = player2Board.placeBoat(boat, location)
+
+    Seq((player1, player1Board), (player2, player2Board))
+  }
+
+  /**
+    * Overkill implicit just for fun
+    */
   implicit class PlayerRepr(playerAndBoard: (Player, BoardState)) {
     def player: Player = playerAndBoard._1
 

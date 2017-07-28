@@ -8,11 +8,15 @@ object BoardState {
   def empty: BoardState = BoardState(Set.empty, Seq.empty)
 }
 
-case class BoardState(boats: Set[(Boat, BoatPlacement)], history: Seq[Shot]) {
+case class BoardState(boats: Set[(Boat, BoatLocation)], history: Seq[Shot]) {
 
-  def placeBoat(boat: Boat, boatPlacement: BoatPlacement): BoardState = {
-    val placement = (boat, boatPlacement)
-    BoardState(boats + placement, history)
+  def placeBoat(boat: Boat, boatLocation: BoatLocation): BoardState = {
+    val allUsedCoordinates = boats.flatMap{case (placedBoat, placement) => placedBoat.coordinates(placement)}
+    val boatLocationFree = boat.coordinates(boatLocation).toSet.intersect(allUsedCoordinates).isEmpty
+    require(boatLocationFree, s"Cannot place $boat on $boatLocation: ${boat.coordinates(boatLocation)} overlaps with $allUsedCoordinates")
+
+    val location = (boat, boatLocation)
+    BoardState(boats + location, history)
   }
 
   def shoot(coordinate: Coordinate): BoardState = {
@@ -22,23 +26,28 @@ case class BoardState(boats: Set[(Boat, BoatPlacement)], history: Seq[Shot]) {
     BoardState(boats, (coordinate, shotResult) +: history)
   }
 
-  def gameOver: Boolean = boats.size == history.count(_._2 match {
-    case Sink(_) => true
-    case _ => false
-  })
+  def gameOver: Boolean = {
+    boats.size == history.count(_._2 match {
+      case Sink(_) => true
+      case _ => false
+    })
+  }
+
+  def shotsOnBoatSoFar(boat: Boat, location: BoatLocation): Int = {
+    val  boatCoordinates = boat.coordinates(location)
+    history.count { case ((x, y), _) => boatCoordinates.contains((x, y)) }
+  }
 
   def calculateShotResult(coordinate: Coordinate): ShotResult = {
-    def shotsOnBoatSoFar(boat: Boat, placement: BoatPlacement) =
-      history.count { case ((x, y), _) => boat.coordinates(placement).contains((x, y)) }
 
-    val boatShotAt = boats.find { case (boat, placement) =>
-      boat.liesOn(placement, coordinate._1, coordinate._2)
+    val boatShotAt = boats.find { case (boat, location) =>
+      boat.liesOn(location, coordinate._1, coordinate._2)
     }
 
-    boatShotAt match {
+    boatShotAt match { // TODO Fix (check duplicate shots / history)
       case None => Miss
-      case Some((boatBeingHit, placement)) =>
-        if (shotsOnBoatSoFar(boatBeingHit, placement) < boatBeingHit.size) Hit
+      case Some((boatBeingHit, location)) =>
+        if (shotsOnBoatSoFar(boatBeingHit, location) < boatBeingHit.size - 1) Hit
         else Sink(boatBeingHit)
     }
   }
