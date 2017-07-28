@@ -44,7 +44,7 @@ case class BoardState(boats: Set[(Boat, BoatLocation)], history: Seq[Shot]) {
       boat.liesOn(location, coordinate._1, coordinate._2)
     }
 
-    boatShotAt match { // TODO Fix (check duplicate shots / history)
+    boatShotAt match {
       case None => Miss
       case Some((boatBeingHit, location)) =>
         if (shotsOnBoatSoFar(boatBeingHit, location) < boatBeingHit.size - 1) Hit

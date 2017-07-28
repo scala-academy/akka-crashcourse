@@ -35,12 +35,6 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
 
     while (!currentPlayer.won) {
       val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
-      currentPlayer.board.calculateShotResult(nextShot) match {
-        case Hit => println(s"${currentPlayer.player}: Hit at $nextShot")
-        case Sink(boat) => println(s"${currentPlayer.player}: Sunk boat $boat at $nextShot")
-        case _ =>
-      }
-
       val newBoard = currentPlayer.shoot(nextShot)
       players = players.tail ++ Seq((currentPlayer.player, newBoard))
     }
