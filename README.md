@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/scala-academy/akka-crashcourse.png?label=ready&title=Ready)](https://waffle.io/scala-academy/akka-crashcourse?utm_source=badge)
 # akka-crashcourse
 
 Project for getting a feeling of Akka for a small group of engineers
