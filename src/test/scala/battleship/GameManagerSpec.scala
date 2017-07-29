@@ -2,11 +2,10 @@ package battleship
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
+import GameManagerActor._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 
 /**
   * Created by jordidevos on 28/07/2017.
@@ -29,8 +28,6 @@ class GameManagerSpec(_system: ActorSystem)
       ActorRef.noSender
     }
   }
-
-  import GameManagerActor._
 
   "GameManager" should {
     "create a game when receiving a CreateGame message and return the id" in {

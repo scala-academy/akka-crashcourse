@@ -3,15 +3,15 @@ package battleship
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import battleship.game.Game
+import PlayerActor._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 /**
   * Created by jordidevos on 28/07/2017.
   */
-class PlayerActorSpec (_system: ActorSystem)
+class PlayerActorSpec(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -22,8 +22,6 @@ class PlayerActorSpec (_system: ActorSystem)
   override def afterAll: Unit = {
     shutdown(system)
   }
-
-  import PlayerActor._
 
   "PlayerActor" should {
     "return the placement of boats when receiving a PlaceBoats message" in {

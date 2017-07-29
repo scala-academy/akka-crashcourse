@@ -1,5 +1,7 @@
 package battleship.game
 
+import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState
+
 /**
   * Created by jordidevos on 26/07/2017.
   */
@@ -23,35 +25,42 @@ object Game {
 
 class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat], id: Int) {
 
-  var player1Board: BoardState = BoardState.empty
-  var player2Board: BoardState = BoardState.empty
+  type PlayerState = (Player, BoardState)
 
-  var winner: Option[Player] = None
+  val player1Board: BoardState = initPlayerState(player2)
+  val player2Board: BoardState = initPlayerState(player1)
 
-  def play(): Unit = {
-    var players: Seq[(Player, BoardState)] = initPlayers
-
-    def currentPlayer = players.head
-
-    while (!currentPlayer.won) {
-      val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
-      val newBoard = currentPlayer.shoot(nextShot)
-      players = players.tail ++ Seq((currentPlayer.player, newBoard))
+  def initPlayerState(playerToPlaceBoats: Player): BoardState = {
+    val placements = playerToPlaceBoats.placeBoats(allBoats, boardSize)
+    placements.foldLeft(BoardState.empty) {
+      case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
     }
-
-    winner = Some(currentPlayer.player)
-
-    println(s"Winner: ${winner.get}")
   }
 
-  def initPlayers: Seq[(Player, BoardState)] = {
-    val player1Placements = player1.placeBoats(allBoats, boardSize)
-    val player2Placements = player2.placeBoats(allBoats, boardSize)
+  def play(): Player = {
 
-    for ((boat, location) <- player2Placements) player1Board = player1Board.placeBoat(boat, location)
-    for ((boat, location) <- player1Placements) player2Board = player2Board.placeBoat(boat, location)
+    def playRecursively(players: (PlayerState, PlayerState)): Player = {
+      val (currentPlayer, nextPlayer) = players
+      if (currentPlayer.won) {
+        currentPlayer.player
+      }
+      else {
+        val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
+        val newBoard = currentPlayer.shoot(nextShot)
+        val updatedPlayers = (nextPlayer, (currentPlayer.player, newBoard))
+        playRecursively(updatedPlayers)
+      }
+    }
 
-    Seq((player1, player1Board), (player2, player2Board))
+    val player1State: PlayerState = (player1, player1Board)
+    val player2State: PlayerState = (player2, player2Board)
+    val players = (player1State, player2State)
+
+    val winner = playRecursively(players)
+
+    println(s"Winner: $winner")
+
+    winner
   }
 
   /**
