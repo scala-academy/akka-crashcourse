@@ -41,7 +41,7 @@ class StupidRandomPlayer(seed: Int = Random.nextInt) extends Player {
 
   override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
     val location = (rnd.nextInt(boardSize), rnd.nextInt(boardSize))
-    if (shotHistory.exists(_._1 == location)) {
+    if (shotHistory.exists { case (shotCoordinates, _) => shotCoordinates == location }) {
       getNextShot(boardSize, shotHistory)
     } else {
       location

@@ -1,6 +1,7 @@
 package battleship
 
 import akka.actor.{Actor, Props}
+import battleship.PlayerActor.BoatPlacementResult
 import battleship.game.{Boat, BoatLocation, ShotResult}
 
 /**
@@ -21,6 +22,6 @@ object PlayerActor {
 class PlayerActor extends Actor {
 
   override def receive: Receive = {
-    case _ =>
+    case _ => sender() ! BoatPlacementResult(Set.empty)
   }
 }

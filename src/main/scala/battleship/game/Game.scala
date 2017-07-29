@@ -1,16 +1,15 @@
 package battleship.game
 
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
   * Created by jordidevos on 26/07/2017.
   */
 object Game {
 
-  var id = 0
+  val idCounter = new AtomicInteger(0)
 
-  def nextId: Int = {
-    id += 1
-    id
-  }
+  def nextId: Int = idCounter.incrementAndGet()
 
   val defaultBoatSet = Seq(Boat(5), Boat(4), Boat(3), Boat(3), Boat(2))
 
@@ -23,46 +22,46 @@ object Game {
 
 class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat], id: Int) {
 
-  var player1Board: BoardState = BoardState.empty
-  var player2Board: BoardState = BoardState.empty
+  type PlayerState = (Player, BoardState)
 
-  var winner: Option[Player] = None
-
-  def play(): Unit = {
-    var players: Seq[(Player, BoardState)] = initPlayers
-
-    def currentPlayer = players.head
-
-    while (!currentPlayer.won) {
-      val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
-      val newBoard = currentPlayer.shoot(nextShot)
-      players = players.tail ++ Seq((currentPlayer.player, newBoard))
+  def play: Player = {
+    def playRecursively(players: (PlayerState, PlayerState)): Player = {
+      val (currentPlayer, nextPlayer) = players
+      if (currentPlayer.won) {
+        currentPlayer.player
+      } else {
+        val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
+        val newBoard = currentPlayer.shoot(nextShot)
+        val updatedPlayers = (nextPlayer, (currentPlayer.player, newBoard))
+        playRecursively(updatedPlayers)
+      }
     }
 
-    winner = Some(currentPlayer.player)
+    val player1Board: BoardState = initPlayerState(player2)
+    val player1State: PlayerState = (player1, player1Board)
 
-    println(s"Winner: ${winner.get}")
+    val player2Board: BoardState = initPlayerState(player1)
+    val player2State: PlayerState = (player2, player2Board)
+
+    val players = (player1State, player2State)
+    val winner = playRecursively(players)
+
+    println(s"Winner: $winner")
+
+    winner
   }
 
-  def initPlayers: Seq[(Player, BoardState)] = {
-    val player1Placements = player1.placeBoats(allBoats, boardSize)
-    val player2Placements = player2.placeBoats(allBoats, boardSize)
-
-    for ((boat, location) <- player2Placements) player1Board = player1Board.placeBoat(boat, location)
-    for ((boat, location) <- player1Placements) player2Board = player2Board.placeBoat(boat, location)
-
-    Seq((player1, player1Board), (player2, player2Board))
+  def initPlayerState(playerToPlaceBoats: Player): BoardState = {
+    val placements = playerToPlaceBoats.placeBoats(allBoats, boardSize)
+    placements.foldLeft(BoardState.empty) {
+      case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
+    }
   }
 
-  /**
-    * Overkill implicit just for fun
-    */
   implicit class PlayerRepr(playerAndBoard: (Player, BoardState)) {
-    def player: Player = playerAndBoard._1
+    val (player, board) = playerAndBoard
 
-    def board: BoardState = playerAndBoard._2
-
-    def won: Boolean = board.gameOver
+    def won: Boolean = board.allShipsSunk
 
     def shoot(coordinate: Coordinate): BoardState = board.shoot(coordinate)
 

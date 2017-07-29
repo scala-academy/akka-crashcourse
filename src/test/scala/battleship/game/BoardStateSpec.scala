@@ -42,12 +42,12 @@ class BoardStateSpec extends WordSpec with Matchers {
     "return true when the amount of Sunk Shotresults in the history is equals to the amount of boats on the board" in {
       val state = BoardState.empty
 
-      state.gameOver should be(true)
+      state.allShipsSunk should be(true)
     }
     "return false when the amount of Sunk Shotresults in the history is smaller than the amount of boats on the board" in {
       val state = BoardState.empty.placeBoat(Boat(3), BoatLocation(0, 0, true))
 
-      state.gameOver should be(false)
+      state.allShipsSunk should be(false)
     }
   }
 

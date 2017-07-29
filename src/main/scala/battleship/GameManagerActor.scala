@@ -1,6 +1,7 @@
 package battleship
 
 import akka.actor.{Actor, ActorRef, Props}
+import battleship.GameManagerActor.GameCreated
 
 /**
   * Created by jordidevos on 28/07/2017.
@@ -11,6 +12,7 @@ object GameManagerActor {
 
   /**
     * Returned when a new game is created. The returned id should be unique for this game
+    *
     * @param id
     */
   case class GameCreated(id: Int)
@@ -31,10 +33,8 @@ class GameManagerActor extends Actor {
 
   override def receive: Receive = {
     case _ => {
-
       createGame(0)
-
-      sender() ! "game id = 0"
+      sender() ! GameCreated(0)
     }
   }
 
@@ -50,11 +50,8 @@ trait GameCreater {
 
 trait GameCreaterImpl extends GameCreater {
   def createGame(id: Int): ActorRef = {
-
     // TODO create game actor here
-
-    println(s"Created game $id")
-
+    println(s"Should have created game with id=$id")
     ActorRef.noSender // TODO Fix: return appropriate ActorRef
   }
 }
