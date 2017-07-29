@@ -22,22 +22,21 @@ class GameManagerSpec(_system: ActorSystem)
     shutdown(system)
   }
 
-  trait TestGameCreater extends GameCreater {
-    override def createGame(id: Int): ActorRef = {
-      println(s"createGame($id) in TestGameCreater")
-      ActorRef.noSender
-    }
-  }
-
   "GameManager" should {
     "create a game when receiving a CreateGame message and return the id" in {
       val testProbe = TestProbe()
-      val testActor = system.actorOf(Props(new GameManagerActor with TestGameCreater))
+      var testActorCalled = false
+      val testActor = system.actorOf(Props(new GameManagerActor with GameCreater {
+        override def createGame(id: Int): ActorRef = {
+          testActorCalled = true
+          ActorRef.noSender
+        }
+      }))
 
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
 
-      testProbe.expectMsg(50 millis, "game id = 0")
-
+      testProbe.expectMsg(50 millis, GameCreated(0))
+      testActorCalled should be(true)
     }
     "return the winner of a game after receiving a PlayGame message" in {
       ???

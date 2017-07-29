@@ -20,14 +20,14 @@ case class BoardState(boats: Set[(Boat, BoatLocation)], history: Seq[Shot]) {
   }
 
   def shoot(coordinate: Coordinate): BoardState = {
-    val coordinateInHistory = history.exists(_._1 == coordinate)
+    val coordinateInHistory = history.exists{case (shotLocation, _) => shotLocation == coordinate}
     require(!coordinateInHistory, "Can't shoot at the same coordinate twice")
 
     val shotResult = calculateShotResult(coordinate)
     BoardState(boats, (coordinate, shotResult) +: history)
   }
 
-  def gameOver: Boolean = {
+  def allShipsSunk: Boolean = {
     boats.size == history.count {
       case (_, shotResult) =>
         shotResult match {

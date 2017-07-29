@@ -12,7 +12,7 @@ class GameSpec extends WordSpec with Matchers {
       val player2 = LinearPlayer
       val game = Game.create(player1, player2)
 
-      val winner = game.play()
+      val winner = game.play
 
       winner should be(player2)
     }
