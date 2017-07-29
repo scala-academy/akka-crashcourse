@@ -1,0 +1,10 @@
+language: scala
+
+scala: 2.12.2
+
+jdk: oraclejdk8
+
+env:
+  - CODACY_PROJECT_TOKEN=c806ed52990940428d47a1f41b3de8ff
+
+script: ./build.sh
