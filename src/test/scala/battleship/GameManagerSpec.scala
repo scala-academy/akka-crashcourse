@@ -35,7 +35,7 @@ class GameManagerSpec(_system: ActorSystem)
 
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
 
-      testProbe.expectMsg(50 millis, GameCreated(0))
+      testProbe.expectMsg(500 millis, GameCreated(0))
       testActorCalled should be(true)
     }
     "return the winner of a game after receiving a PlayGame message" in {
