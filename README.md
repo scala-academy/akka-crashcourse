@@ -1,5 +1,4 @@
-[![Stories in Ready](https://badge.waffle.io/scala-academy/akka-crashcourse.png?label=ready&title=Ready)](https://waffle.io/scala-academy/akka-crashcourse?utm_source=badge)
-[![Build Status](https://travis-ci.org/scala-academy/akka-crashcourse.svg?branch=master)](https://travis-ci.org/scala-academy/akka-crashcourse)
+[![Stories in Ready](https://badge.waffle.io/scala-academy/akka-crashcourse.png?label=ready&title=Ready)](https://waffle.io/scala-academy/akka-crashcourse?utm_source=badge) [![Build Status](https://travis-ci.org/scala-academy/akka-crashcourse.svg?branch=master)](https://travis-ci.org/scala-academy/akka-crashcourse) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b7aa1b504752470e9d29ce517f8bdce6)](https://www.codacy.com/app/devos-jordi/akka-crashcourse?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=scala-academy/akka-crashcourse&amp;utm_campaign=Badge_Grade) [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/b7aa1b504752470e9d29ce517f8bdce6)](https://www.codacy.com/app/devos-jordi/akka-crashcourse?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=scala-academy/akka-crashcourse&amp;utm_campaign=Badge_Coverage)
 
 # akka-crashcourse
 
