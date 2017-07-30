@@ -9,9 +9,7 @@ Basic idea is to together develop a game server that hosts games of Battleship.
 As a sarting point, the game logic is provided.
 
 TODO before starting:
- * create waffle board?
  * refine user stories, make automatable acceptance criteria
- * setup travis/codacy integration
 
 It is up to the engineers to:
  * (Reactive principles) rewrite some of the game logic to reactive, using asynchronuous message passing
