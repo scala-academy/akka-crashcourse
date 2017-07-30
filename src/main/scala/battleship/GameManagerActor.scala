@@ -24,34 +24,18 @@ object GameManagerActor {
     */
   case class GameEnded(winner: String)
 
-  def props: Props = Props(new GameManagerActor with GameCreaterImpl)
+  def props: Props = Props(new GameManagerActor with GameCreatorImpl)
 
 }
 
 class GameManagerActor extends Actor {
-  this: GameCreater =>
+  this: GameActorCreator =>
 
   override def receive: Receive = {
     case _ => {
-      createGame(0)
+      val _ = createGameActor
       sender() ! GameCreated(0)
     }
   }
 
-}
-
-/**
-  * The following trait is used to inject the logic of creating games into the GameManagerActor. This allows other
-  * logic to be injected for testing purposes
-  */
-trait GameCreater {
-  def createGame(id: Int): ActorRef
-}
-
-trait GameCreaterImpl extends GameCreater {
-  def createGame(id: Int): ActorRef = {
-    // TODO create game actor here
-    println(s"Should have created game with id=$id")
-    ActorRef.noSender // TODO Fix: return appropriate ActorRef
-  }
 }

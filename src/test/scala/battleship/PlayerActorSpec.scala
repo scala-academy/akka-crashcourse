@@ -30,7 +30,7 @@ class PlayerActorSpec(_system: ActorSystem)
 
       testProbe.send(testActor, PlaceBoats(Game.defaultBoatSet, Game.defaultBoardSize))
 
-      testProbe.expectMsgPF(50 millis) {
+      testProbe.expectMsgPF(500 millis) {
         case BoatPlacementResult(boatLocations) => // TODO: handling of PlaceBoats to be implemented
       }
 
