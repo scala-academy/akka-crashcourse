@@ -1,9 +1,12 @@
 package battleship
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import GameManagerActor._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -25,10 +28,10 @@ class GameManagerSpec(_system: ActorSystem)
   "GameManager" should {
     "create a game when receiving a CreateGame message and return the id" in {
       val testProbe = TestProbe()
-      var testActorCalled = false
+      val testActorCallCount = new AtomicInteger(0)
       val testActor = system.actorOf(Props(new GameManagerActor with GameActorCreator {
         override def createGameActor: ActorRef = {
-          testActorCalled = true
+          testActorCallCount.incrementAndGet()
           ActorRef.noSender
         }
       }))
@@ -36,7 +39,7 @@ class GameManagerSpec(_system: ActorSystem)
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
 
       testProbe.expectMsg(500 millis, GameCreated(0))
-      testActorCalled should be(true)
+      testActorCallCount.get should be(1)
     }
     "return the winner of a game after receiving a PlayGame message" in {
       // TODO
