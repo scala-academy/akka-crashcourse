@@ -1,4 +1,6 @@
 [![Stories in Ready](https://badge.waffle.io/scala-academy/akka-crashcourse.png?label=ready&title=Ready)](https://waffle.io/scala-academy/akka-crashcourse?utm_source=badge)
+[![Build Status](https://travis-ci.org/scala-academy/akka-crashcourse.svg?branch=master)](https://travis-ci.org/scala-academy/akka-crashcourse)
+
 # akka-crashcourse
 
 Project for getting a feeling of Akka for a small group of engineers
