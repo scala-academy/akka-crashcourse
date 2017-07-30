@@ -26,8 +26,8 @@ class GameManagerSpec(_system: ActorSystem)
     "create a game when receiving a CreateGame message and return the id" in {
       val testProbe = TestProbe()
       var testActorCalled = false
-      val testActor = system.actorOf(Props(new GameManagerActor with GameCreater {
-        override def createGame(id: Int): ActorRef = {
+      val testActor = system.actorOf(Props(new GameManagerActor with GameActorCreator {
+        override def createGameActor: ActorRef = {
           testActorCalled = true
           ActorRef.noSender
         }
