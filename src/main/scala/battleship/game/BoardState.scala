@@ -19,7 +19,7 @@ case class BoardState(boats: Set[(Boat, BoatLocation)], history: Seq[Shot]) {
     BoardState(boats + location, history)
   }
 
-  def shoot(coordinate: Coordinate): BoardState = {
+  def processShot(coordinate: Coordinate): BoardState = {
     val coordinateInHistory = history.exists{case (shotLocation, _) => shotLocation == coordinate}
     require(!coordinateInHistory, "Can't shoot at the same coordinate twice")
 

@@ -23,16 +23,16 @@ class BoardStateSpec extends WordSpec with Matchers {
 
   "shoot" should {
     "throw an exception if a shot is made to a coordinate for the second time" in {
-      val state = BoardState.empty.shoot(0, 0)
+      val state = BoardState.empty.processShot(0, 0)
 
       assertThrows[IllegalArgumentException] {
-        state.shoot(0, 0)
+        state.processShot(0, 0)
       }
     }
     "return an updated instance of BoardState with the shot included in the history" in {
       val state = BoardState.empty
 
-      val result = state.shoot(1, 1).shoot(3, 4)
+      val result = state.processShot(1, 1).processShot(3, 4)
 
       result should be(BoardState(Set.empty, Seq(((3, 4), Miss), ((1, 1), Miss))))
     }
@@ -57,10 +57,10 @@ class BoardStateSpec extends WordSpec with Matchers {
       val placement = BoatLocation(0, 0, true)
       val state = BoardState.empty
         .placeBoat(boat, placement)
-        .shoot(0,0)
-        .shoot(1,1)
-        .shoot(1,0)
-        .shoot(0,2)
+        .processShot(0,0)
+        .processShot(1,1)
+        .processShot(1,0)
+        .processShot(0,2)
 
       state.shotsOnBoatSoFar(boat, placement) should be(2)
     }
@@ -80,14 +80,14 @@ class BoardStateSpec extends WordSpec with Matchers {
     "return Hit when a shot hits but does not sink for 2nd shot on size 3 boat" in {
       val state = BoardState.empty
         .placeBoat(Boat(3), BoatLocation(0, 0, true))
-        .shoot(2,0)
+        .processShot(2,0)
 
       state.calculateShotResult(0,0) should be(Hit)
     }
     "return Sink when a shot hits for the x'th time on a x-size boat" in {
       val state = BoardState.empty
         .placeBoat(Boat(2), BoatLocation(0, 0, true))
-        .shoot(1,0)
+        .processShot(1,0)
 
       state.calculateShotResult(0,0) should be(Sink(Boat(2)))
     }

@@ -27,11 +27,11 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
   def play: Player = {
     def playRecursively(players: (PlayerState, PlayerState)): Player = {
       val (currentPlayer, nextPlayer) = players
-      if (currentPlayer.won) {
+      if (currentPlayer.hasWon) {
         currentPlayer.player
       } else {
         val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
-        val newBoard = currentPlayer.shoot(nextShot)
+        val newBoard = currentPlayer.processShot(nextShot)
         val updatedPlayers = (nextPlayer, (currentPlayer.player, newBoard))
         playRecursively(updatedPlayers)
       }
@@ -63,12 +63,12 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
     * tuple (Player, BoardState) can be automatically converted to PlayerRepr. As a result, the below defined functions
     * are added to the scope of the tuple (Player, BoardState)
     */
-  implicit class PlayerRepr(playerAndBoard: (Player, BoardState)) {
+  implicit class PlayerStateOps(playerAndBoard: (Player, BoardState)) {
     val (player, board) = playerAndBoard
 
-    def won: Boolean = board.allShipsSunk
+    def hasWon: Boolean = board.allShipsSunk
 
-    def shoot(coordinate: Coordinate): BoardState = board.shoot(coordinate)
+    def processShot(coordinate: Coordinate): BoardState = board.processShot(coordinate)
 
     def history: Seq[((Int, Int), ShotResult)] = board.history
 
