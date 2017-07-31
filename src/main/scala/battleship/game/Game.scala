@@ -58,6 +58,11 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
     }
   }
 
+  /**
+    * Demonstrate the usage of implicit conversion: when the following class declaration is in score, instances of the
+    * tuple (Player, BoardState) can be automatically converted to PlayerRepr. As a result, the below defined functions
+    * are added to the scope of the tuple (Player, BoardState)
+    */
   implicit class PlayerRepr(playerAndBoard: (Player, BoardState)) {
     val (player, board) = playerAndBoard
 

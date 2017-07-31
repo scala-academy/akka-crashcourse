@@ -1,14 +1,35 @@
 package battleship.game
 
+import scala.language.implicitConversions
 import scala.util.Random
 
 /**
   * Created by jordidevos on 27/07/2017.
   */
-class StupidRandomPlayer(seed: Int = Random.nextInt) extends Player {
+
+object StupidRandomPlayer {
+
+  /**
+    * Demonstrate the usage of a type class: even though the class StupidRandomPlayer does not extend the Player trait,
+    * the following type class instance makes it possible for instances of the class StupidRandomPlayer to be used where
+    * an instance of the Player trait is required
+    */
+  implicit def randomPlayerInstance(srp: StupidRandomPlayer): Player = new Player {
+    import srp._
+
+    override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = placeBoatsRandomly(boats, boardSize)
+
+    override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = getNextRandomShot(boardSize, shotHistory)
+
+    override def name: String = s"RandomPlayer($seed)"
+  }
+
+}
+class StupidRandomPlayer(val seed: Int = Random.nextInt) {
+
   val rnd = new Random(seed)
 
-  override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = {
+  def placeBoatsRandomly(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = {
 
     def canPlace(boatToPlace: Boat, potentialPlacement: BoatLocation, acc: Set[(Boat, BoatLocation)]): Boolean = {
       def coordinatesTaken(x: Int, y: Int) =
@@ -38,15 +59,13 @@ class StupidRandomPlayer(seed: Int = Random.nextInt) extends Player {
     placeBoatsR(boats, Set.empty)
   }
 
-
-  override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
+  def getNextRandomShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
     val location = (rnd.nextInt(boardSize), rnd.nextInt(boardSize))
     if (shotHistory.exists { case (shotCoordinates, _) => shotCoordinates == location }) {
-      getNextShot(boardSize, shotHistory)
+      getNextRandomShot(boardSize, shotHistory)
     } else {
       location
     }
   }
 
-  override def name: String = s"RandomPlayer($seed)"
 }
