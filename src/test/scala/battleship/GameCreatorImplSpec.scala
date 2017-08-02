@@ -7,11 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 /**
   * Created by Jordi on 30-7-2017.
   */
-class GameCreatorImplSpec(_system: ActorSystem)
-  extends TestKit(_system)
-    with Matchers
-    with WordSpecLike
-    with BeforeAndAfterAll {
+class GameCreatorImplSpec(_system: ActorSystem) extends SpecBase(_system) {
 
   def this() = this(ActorSystem("GameManagerSpecActorSystem"))
 
