@@ -7,7 +7,8 @@ package battleship
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
 import battleship.PlayerActor.{GetNextShot, PlaceBoats}
-import battleship.game.{Boat, Game, LinearPlayer}
+import battleship.game.{BoardState, Boat, Game, LinearPlayer}
+import battleship.routes.gameActor
 import battleship.routes.gameActor._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -38,7 +39,7 @@ class gameActorSpec(_system: ActorSystem)
 
 
 
-      testProbe.send(testActorgame, StartGame(8, testplayer1.ref, testplayer2.ref))
+      testProbe.send(testActorgame, StartGame(8, testplayer1.ref, testplayer2.ref,Seq(Boat(5), Boat(4), Boat(3), Boat(3), Boat(2))))
       testProbe.expectMsgPF(500 millis) {
         case "Game started!" => {
           println("gameactortest: game started")
@@ -67,6 +68,37 @@ class gameActorSpec(_system: ActorSystem)
           println("gameactor sent message to actor 1 asking for next shot")
         }
       }
+    }
+    "Finish the game correctly" in {
+      val testProbe = TestProbe()
+      val testplayer1 = TestProbe()
+      val testplayer2 = TestProbe()
+      val testActorgame = system.actorOf(props)
+      val placement = Set((Boat(1),game.BoatLocation(1,1,true)))
+
+
+      testProbe.send(testActorgame, StartGame(1, testplayer1.ref, testplayer2.ref,Seq(Boat(1))))
+      testplayer1.expectMsgPF(500 millis) {
+        case _ => //
+      }
+      testplayer1.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer2.expectMsgPF(500 millis) {
+        case _ => //
+      }
+      testplayer2.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer2.expectMsgPF(500 millis) {
+        case _ => //
+      }
+      testplayer2.send(testActorgame, ThisIsNextMove(1,1))
+      testplayer2.expectMsgPF(500 millis) {
+        case string: String => {
+          println(string)
+          val stringcomp = "Player " + testplayer2.ref +  " has won!!"
+          if (string == stringcomp) succeed
+          else fail("Game not ended properly!")
+        }
+      }
+
     }
   }
 }
