@@ -1,6 +1,6 @@
 package battleship.routes
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import battleship.PlayerActor.{GetNextShot, PlaceBoats}
 import battleship.game._
 import battleship.routes.gameActor.{StartGame, ThisIsBoatSetup, ThisIsNextMove}
@@ -23,7 +23,7 @@ object gameActor {
 
 
   //declare winner
-
+  def props: Props = Props(new gameActor)
 
 }
 
@@ -40,7 +40,7 @@ class gameActor extends Actor with ActorLogging {
   var boardstates: Map[ActorRef, BoardState] = Map()
 
   def initPlayerState(playerToPlaceBoats: ActorRef): BoardState = {
-    val placements = boatsetup(ActorRef)
+    val placements = boatsetup(playerToPlaceBoats)
     placements.foldLeft(BoardState.empty) {
       case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
     }
@@ -51,15 +51,17 @@ class gameActor extends Actor with ActorLogging {
       players = (player1, player2)
       boardsize = size
       players._1 ! PlaceBoats(Game.defaultBoatSet, boardsize)
+      sender() ! "Game started!"
     }
     case ThisIsBoatSetup(placement) if sender() == players._1 => {
       //Right now: If players send multiple placements, they will overwrite the other.
-      if (boatsetup.count((a: (ActorRef, Set[(Boat, BoatLocation)])) => true) < 2) {
+      if (boatsetup.count((a: (ActorRef, Set[(Boat, BoatLocation)])) => true) < 1) {
         boatsetup += (players._1 -> placement)
         players = (players._2, players._1)
         players._1 ! PlaceBoats(Game.defaultBoatSet, boardsize)
       }
       else {
+        boatsetup += (players._1 -> placement)
         boardstates += (players._1 -> initPlayerState(players._2))
         boardstates += (players._2 -> initPlayerState(players._1))
         players._1 ! GetNextShot(boardsize, List())
