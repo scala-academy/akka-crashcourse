@@ -11,11 +11,7 @@ import scala.language.postfixOps
 /**
   * Created by jordidevos on 28/07/2017.
   */
-class PlayerActorSpec(_system: ActorSystem)
-  extends TestKit(_system)
-    with Matchers
-    with WordSpecLike
-    with BeforeAndAfterAll {
+class PlayerActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
   def this() = this(ActorSystem("GameManagerSpecActorSystem"))
 
