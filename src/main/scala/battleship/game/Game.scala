@@ -28,6 +28,9 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
     def playRecursively(players: (PlayerState, PlayerState)): Player = {
       val (currentPlayer, nextPlayer) = players
       if (currentPlayer.hasWon) {
+        println(s"Winner: ${currentPlayer.player}")
+        println(currentPlayer.asString)
+        println(nextPlayer.asString)
         currentPlayer.player
       } else {
         val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
@@ -45,8 +48,6 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
 
     val players = (player1State, player2State)
     val winner = playRecursively(players)
-
-    println(s"Winner: $winner")
 
     winner
   }
@@ -73,6 +74,21 @@ class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat]
     def history: Seq[((Int, Int), ShotResult)] = board.history
 
     def getNextShot(boardSize: Int, shotHistory: Seq[Shot]): (Int, Int) = player.getNextShot(boardSize, shotHistory)
-  }
 
+    def asString: String = {
+      val board = for {
+        y <- 0 until boardSize
+        x <- 0 to boardSize
+      } yield {
+        history.toMap.get((x, y)) match {
+          case Some(Miss) => '-'
+          case Some(Hit) => '*'
+          case Some(Sink(Boat(size))) => size.toString.toCharArray.head
+          case None if x == boardSize => '\n'
+          case None => ' '
+        }
+      }
+      player + "\n" + new String(board.toArray)
+    }
+  }
 }
