@@ -15,11 +15,13 @@ object GameActor {
 
   case class StartGame(boardsize:Int, player1:ActorRef, player2:ActorRef, boatset: Seq[Boat])
 
-  //case class WhatIsBoatSetup(boats:Seq[Boat], boardsize: Int)
   case class ThisIsBoatSetup(placement: Set[(Boat,BoatLocation)])
-  //case class WhatIsNextMove(boardsize:Int, shotHistory: Seq[((Int,Int),ShotResult)])
+
   case class ThisIsNextMove(x: Int, y: Int)
 
+  case object WhatIsGameState
+
+  case class GameNotStartedYet(stage: Int)
 
   def props: Props = Props(new GameActor)
 
@@ -27,6 +29,70 @@ object GameActor {
 
 class GameActor extends Actor with ActorLogging {
 
+
+  def placeBoats(placements: Set[(Boat, BoatLocation)]): BoardState = {
+    placements.foldLeft(BoardState.empty) {
+      case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
+    }
+  }
+
+  def swapCurrentPlayer(one:ActorRef,two:ActorRef,current:ActorRef) = {
+    if (one == current) two
+    else one
+  }
+
+
+
+
+override def receive: Receive = {
+  case StartGame(size, player1, player2, boatset) => {
+    player1 ! PlaceBoats(boatset, size)
+    sender() ! "Game started!"
+    context.become(gameinit1(size, player1, player2, boatset))
+  }
+  case WhatIsGameState => sender() ! GameNotStartedYet(0)
+}
+
+  def gameinit1(size:Int,player1:ActorRef,player2:ActorRef,boatset: Seq[Boat]): Receive = {
+    case ThisIsBoatSetup(placement1) if (sender() == player1) =>
+      player2 ! PlaceBoats(boatset, size)
+      context.become(gameinit2(size, player1, player2, boatset,placement1))
+    case WhatIsGameState => sender() ! GameNotStartedYet(1)
+  }
+
+  def gameinit2(size:Int,player1:ActorRef,player2:ActorRef,boatset1:Seq[Boat],placement1:Set[(Boat,BoatLocation)]): Receive = {
+    case ThisIsBoatSetup(placement2) if (sender() == player2) =>
+      val boardstates = Map(player1 -> placeBoats(placement2),player2 -> placeBoats(placement1))
+      player2 ! GetNextShot(size, boardstates(player2).history)
+      context.become(gamestarted(size,player1,player2,player2,boardstates))
+    case WhatIsGameState => sender() ! GameNotStartedYet(2)
+  }
+
+  def gamestarted(size:Int,player1:ActorRef,player2:ActorRef,currentplayer:ActorRef,boardstates: Map[ActorRef, BoardState] ):Receive = {
+    case ThisIsNextMove(x, y) if sender() == currentplayer =>
+      val nextboardstates = boardstates + (currentplayer -> boardstates(currentplayer).processShot((x, y)))
+      if (nextboardstates(currentplayer).allShipsSunk) {
+        currentplayer ! ("Player " + currentplayer +  " has won!!") //this is for test only
+        log.info("Player " + currentplayer +  " has won!!")
+        context.become(endgame(currentplayer,boardstates))
+      }
+      else {
+        val currentPlayer2 = swapCurrentPlayer(player1,player2,currentplayer)
+        currentPlayer2 ! GetNextShot(size, nextboardstates(currentPlayer2).history)
+        context.become(gamestarted(size,player1,player2,currentPlayer2,nextboardstates))
+      }
+    case WhatIsGameState => sender() ! boardstates
+  }
+  def endgame(currentplayer: ActorRef, boardstates: Map[ActorRef, BoardState]):Receive = {
+    case WhatIsGameState => sender() ! boardstates
+    case _ => sender() ! "The game ended and " + currentplayer +  " has won"
+  }
+
+
+
+
+/*
+old definition
 
   //internal state
   var boardsize = Game.defaultBoardSize
@@ -40,16 +106,8 @@ class GameActor extends Actor with ActorLogging {
   //keep the state of the boards
   var boardstates: Map[ActorRef, BoardState] = Map()
 
-  def initPlayerState(playerToPlaceBoats: ActorRef): BoardState = {
-    val placements = boatsetup(playerToPlaceBoats)
-    placements.foldLeft(BoardState.empty) {
-      case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
-    }
-  }
 
   def numberofboatsetupsreceived:Int = {boatsetup.count((a: (ActorRef, Set[(Boat, BoatLocation)])) => true)}
-
-  //*****************************************************************************************************************
   //This is not functional programming at all, these functions are there only for the side effects...****************
 
   def initGame(size:Int,player1:ActorRef,player2:ActorRef,boatset:Seq[Boat]):Any = {
@@ -71,14 +129,6 @@ class GameActor extends Actor with ActorLogging {
   def updateaftermove(x:Int,y:Int):Any = boardstates += (currentPlayer -> boardstates(currentPlayer).processShot((x, y)))
 
   //This is not functional programming at all, these functions are there only for the side effects...****************
-  //*****************************************************************************************************************
-    /*
-    def setupgame
-    def firstboatsetup
-    def secondboatsetup
-    def processshot
-     */
-
 
 
   override def receive: Receive = {
@@ -107,5 +157,8 @@ class GameActor extends Actor with ActorLogging {
       }
     }
   }
+  */
+
+
 }
 
