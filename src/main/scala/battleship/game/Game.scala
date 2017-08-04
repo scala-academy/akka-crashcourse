@@ -22,34 +22,34 @@ object Game {
 
 class Game(player1: Player, player2: Player, boardSize: Int, allBoats: Seq[Boat], id: Int) {
 
-    type PlayerState = (Player, BoardState)
+  type PlayerState = (Player, BoardState)
 
-    def play: Player = {
-      def playRecursively(players: (PlayerState, PlayerState)): Player = {
-        val (currentPlayer, nextPlayer) = players
-        if (currentPlayer.hasWon) {
-          currentPlayer.player
-        } else {
-          val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
-          val newBoard = currentPlayer.processShot(nextShot)
-          val updatedPlayers = (nextPlayer, (currentPlayer.player, newBoard))
-          playRecursively(updatedPlayers)
-        }
+  def play: Player = {
+    def playRecursively(players: (PlayerState, PlayerState)): Player = {
+      val (currentPlayer, nextPlayer) = players
+      if (currentPlayer.hasWon) {
+        currentPlayer.player
+      } else {
+        val nextShot = currentPlayer.getNextShot(boardSize, currentPlayer.history)
+        val newBoard = currentPlayer.processShot(nextShot)
+        val updatedPlayers = (nextPlayer, (currentPlayer.player, newBoard))
+        playRecursively(updatedPlayers)
       }
-
-      val player1Board: BoardState = initPlayerState(player2)
-      val player1State: PlayerState = (player1, player1Board)
-
-      val player2Board: BoardState = initPlayerState(player1)
-      val player2State: PlayerState = (player2, player2Board)
-
-      val players = (player1State, player2State)
-      val winner = playRecursively(players)
-
-      println(s"Winner: $winner")
-
-      winner
     }
+
+    val player1Board: BoardState = initPlayerState(player2)
+    val player1State: PlayerState = (player1, player1Board)
+
+    val player2Board: BoardState = initPlayerState(player1)
+    val player2State: PlayerState = (player2, player2Board)
+
+    val players = (player1State, player2State)
+    val winner = playRecursively(players)
+
+    println(s"Winner: $winner")
+
+    winner
+  }
 
   def initPlayerState(playerToPlaceBoats: Player): BoardState = {
     val placements = playerToPlaceBoats.placeBoats(allBoats, boardSize)

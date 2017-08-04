@@ -17,7 +17,7 @@ class PlayerActorSpec(_system: ActorSystem)
     with WordSpecLike
     with BeforeAndAfterAll {
 
-  def this() = this(ActorSystem("GameManagerSpecActorSystem"))
+  def this() = this(ActorSystem("PlayerActorSpecActorSystem"))
 
   override def afterAll: Unit = {
     shutdown(system)
