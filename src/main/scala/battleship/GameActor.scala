@@ -10,24 +10,38 @@ import battleship.game._
   */
 
 
+
+
+
+
 object GameActor {
+  //Incoming
+  case class StartGame(boardSize: Int, player1: ActorRef, player2: ActorRef, boatSet: Seq[Boat])
 
-  case class StartGame(boardsize: Int, player1: ActorRef, player2: ActorRef, boatset: Seq[Boat])
+  case class BoatSetup(placement: Set[(Boat, BoatLocation)])
 
-  case class ThisIsBoatSetup(placement: Set[(Boat, BoatLocation)])
+  case class Move(x: Int, y: Int)
 
-  case class ThisIsNextMove(x: Int, y: Int)
+  case object GameStateRequest
 
-  case object WhatIsGameState
+  //Outgoing
 
-  case class GameNotStartedYet(stage: Int)
+  case class GameNotStartedYet(stage: GameState)
+
+  type BoardStates = Map[ActorRef, BoardState]
+
+  sealed trait GameState
+  case object Uninitialised extends GameState
+  case object Player1AskedForBoats extends GameState
+  case object Player2AskedForBoats extends GameState
+  case class GameStarted(boardStates: BoardStates) extends GameState
+  case object GameEnded extends GameState
 
   def props: Props = Props(new GameActor)
 
 }
 
 class GameActor extends Actor with ActorLogging {
-
 
   def placeBoats(placements: Set[(Boat, BoatLocation)]): BoardState = {
     placements.foldLeft(BoardState.empty) {
@@ -42,49 +56,49 @@ class GameActor extends Actor with ActorLogging {
 
 
   override def receive: Receive = {
-    case StartGame(size, player1, player2, boatset) => {
-      player1 ! PlaceBoats(boatset, size)
+    case StartGame(size, player1, player2, boatSet) => {
+      player1 ! PlaceBoats(boatSet, size)
       sender() ! "Game started!"
-      context.become(gameinit1(size, player1, player2, boatset))
+      context.become(gameInit1(size, player1, player2, boatSet))
     }
-    case WhatIsGameState => sender() ! GameNotStartedYet(0)
+    case GameStateRequest => sender() ! GameNotStartedYet(Uninitialised)
   }
 
-  def gameinit1(size: Int, player1: ActorRef, player2: ActorRef, boatset: Seq[Boat]): Receive = {
-    case ThisIsBoatSetup(placement1) if sender() == player1 =>
+  def gameInit1(size: Int, player1: ActorRef, player2: ActorRef, boatset: Seq[Boat]): Receive = {
+    case BoatSetup(placement1) if sender() == player1 =>
       player2 ! PlaceBoats(boatset, size)
-      context.become(gameinit2(sender(), size, player1, player2, placement1))
-    case WhatIsGameState => sender() ! GameNotStartedYet(1)
+      context.become(gameInit2(sender(), size, player1, player2, placement1))
+    case GameStateRequest => sender() ! GameNotStartedYet(Player1AskedForBoats)
   }
 
-  def gameinit2(gamestarter: ActorRef, size: Int, player1: ActorRef, player2: ActorRef, placement1: Set[(Boat, BoatLocation)]): Receive = {
-    case ThisIsBoatSetup(placement2) if sender() == player2 =>
-      val boardstates = Map(player1 -> placeBoats(placement2), player2 -> placeBoats(placement1))
-      player2 ! GetNextShot(size, boardstates(player2).history)
-      context.become(gamestarted(gamestarter, size, player1, player2, player2, boardstates))
-    case WhatIsGameState => sender() ! GameNotStartedYet(2)
+  def gameInit2(gameStarter: ActorRef, size: Int, player1: ActorRef, player2: ActorRef, placement1: Set[(Boat, BoatLocation)]): Receive = {
+    case BoatSetup(placement2) if sender() == player2 =>
+      val boardStates = Map(player1 -> placeBoats(placement2), player2 -> placeBoats(placement1))
+      player2 ! GetNextShot(size, boardStates(player2).history)
+      context.become(gameStarted(gameStarter, size, player1, player2, player2, boardStates))
+    case GameStateRequest => sender() ! GameNotStartedYet(Player2AskedForBoats)
   }
 
-  def gamestarted(gamestarter: ActorRef,size: Int, player1: ActorRef, player2: ActorRef, currentplayer: ActorRef, boardstates: Map[ActorRef, BoardState]): Receive = {
-    case ThisIsNextMove(x, y) if sender() == currentplayer =>
-      val nextboardstates = boardstates + (currentplayer -> boardstates(currentplayer).processShot((x, y)))
-      if (nextboardstates(currentplayer).allShipsSunk) {
-        gamestarter ! "The game ended and " + currentplayer + " has won"
-        currentplayer ! ("Player " + currentplayer + " has won!!") //this is for test only
-        log.info("Player " + currentplayer + " has won!!")
-        context.become(endgame(currentplayer, boardstates))
+  def gameStarted(gameStarter: ActorRef, size: Int, player1: ActorRef, player2: ActorRef, currentPlayer: ActorRef, boardStates: BoardStates): Receive = {
+    case Move(x, y) if sender() == currentPlayer =>
+      val nextBoardStates = boardStates + (currentPlayer -> boardStates(currentPlayer).processShot((x, y)))
+      if (nextBoardStates(currentPlayer).allShipsSunk) {
+        gameStarter ! "The game ended and " + currentPlayer + " has won"
+        currentPlayer ! ("Player " + currentPlayer + " has won!!") //this is for test only
+        log.info("Player " + currentPlayer + " has won!!")
+        context.become(endgame(currentPlayer, boardStates))
       }
       else {
-        val currentPlayer2 = swapCurrentPlayer(player1, player2, currentplayer)
-        currentPlayer2 ! GetNextShot(size, nextboardstates(currentPlayer2).history)
-        context.become(gamestarted(gamestarter, size, player1, player2, currentPlayer2, nextboardstates))
+        val currentPlayer2 = swapCurrentPlayer(player1, player2, currentPlayer)
+        currentPlayer2 ! GetNextShot(size, nextBoardStates(currentPlayer2).history)
+        context.become(gameStarted(gameStarter, size, player1, player2, currentPlayer2, nextBoardStates))
       }
-    case WhatIsGameState => sender() ! boardstates
+    case GameStateRequest => sender() ! GameStarted(boardStates)
   }
 
-  def endgame(currentplayer: ActorRef, boardstates: Map[ActorRef, BoardState]): Receive = {
-    case WhatIsGameState => sender() ! boardstates
-    case _ => sender() ! "The game ended and " + currentplayer + " has won"
+  def endgame(currentPlayer: ActorRef, boardStates: Map[ActorRef, BoardState]): Receive = {
+    case GameStateRequest => sender() ! boardStates
+    case _ => sender() ! "The game ended and " + currentPlayer + " has won"
   }
 }
 

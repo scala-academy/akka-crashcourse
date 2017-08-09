@@ -17,11 +17,7 @@ import scala.language.postfixOps
 /**
   * Created by jordidevos on 28/07/2017.
   */
-class GameActorSpec(_system: ActorSystem)
-  extends TestKit(_system)
-  with Matchers
-  with WordSpecLike
-  with BeforeAndAfterAll {
+class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
     def this() = this(ActorSystem("GameActorSpecActorSystem"))
 
@@ -57,8 +53,8 @@ class GameActorSpec(_system: ActorSystem)
 
      val actorRef = TestActorRef[GameActor]
      val actor = actorRef.underlyingActor
-     actor.context.become(actor.gameinit1(1,testplayer1.ref,testplayer2.ref,Seq(Boat(1))))
-     testplayer1.send(actorRef, ThisIsBoatSetup(placement))
+     actor.context.become(actor.gameInit1(1,testplayer1.ref,testplayer2.ref,Seq(Boat(1))))
+     testplayer1.send(actorRef, BoatSetup(placement))
      testplayer2.expectMsgPF(500 millis) {
        case PlaceBoats(a,b) => {
          println("gameactor sent message to actor 2 asking for boat placement")
@@ -72,14 +68,14 @@ class GameActorSpec(_system: ActorSystem)
       val actorRef = TestActorRef[GameActor]
       val actor = actorRef.underlyingActor
 
-      actor.context.become(actor.gameinit2(testplayer1.ref,1,testplayer1.ref,testplayer2.ref,placement))
-      testplayer2.send(actorRef, ThisIsBoatSetup(placement))
+      actor.context.become(actor.gameInit2(testplayer1.ref,1,testplayer1.ref,testplayer2.ref,placement))
+      testplayer2.send(actorRef, BoatSetup(placement))
       testplayer2.expectMsgPF(500 millis) {
         case GetNextShot(size, history) => {
           println("gameactor sent message to actor 2 asking for shot")
         }
       }
-      testplayer1.send(actorRef,WhatIsGameState)
+      testplayer1.send(actorRef,GameStateRequest)
       testplayer1.expectMsgPF(500 millis) {
         case a => println(a)
       }
@@ -88,11 +84,13 @@ class GameActorSpec(_system: ActorSystem)
       val testplayer1 = TestProbe()
       val testplayer2 = TestProbe()
       val placement = Set((Boat(1),game.BoatLocation(1,1,true)))
+
       val actorRef = TestActorRef[GameActor]
       val actor = actorRef.underlyingActor
+
       val boardstate = BoardState(Set((Boat(1),BoatLocation(1,1,true))),List())
-      actor.context.become(actor.gamestarted(testplayer1.ref,8,testplayer1.ref,testplayer2.ref,testplayer2.ref,Map(testplayer1.ref -> boardstate,testplayer2.ref -> boardstate)))
-      testplayer2.send(actorRef,ThisIsNextMove(2,2))
+      actor.context.become(actor.gameStarted(testplayer1.ref,8,testplayer1.ref,testplayer2.ref,testplayer2.ref,Map(testplayer1.ref -> boardstate,testplayer2.ref -> boardstate)))
+      testplayer2.send(actorRef,Move(2,2))
       testplayer1.expectMsgPF(500 millis) {
         case GetNextShot(size, history) => succeed
       }
@@ -104,8 +102,8 @@ class GameActorSpec(_system: ActorSystem)
       val actorRef = TestActorRef[GameActor]
       val actor = actorRef.underlyingActor
       val boardstate = BoardState(Set((Boat(1),BoatLocation(0,0,true))),List())
-      actor.context.become(actor.gamestarted(testplayer1.ref,1,testplayer1.ref,testplayer2.ref,testplayer2.ref,Map(testplayer1.ref -> boardstate,testplayer2.ref -> boardstate)))
-      testplayer2.send(actorRef,ThisIsNextMove(0,0))
+      actor.context.become(actor.gameStarted(testplayer1.ref,1,testplayer1.ref,testplayer2.ref,testplayer2.ref,Map(testplayer1.ref -> boardstate,testplayer2.ref -> boardstate)))
+      testplayer2.send(actorRef,Move(0,0))
       testplayer2.expectMsgPF(500 millis) {
         case a:String => if (a.startsWith("The game ended")) succeed
       }
@@ -126,15 +124,15 @@ class GameActorSpec(_system: ActorSystem)
       testplayer1.expectMsgPF(500 millis) {
         case _ => "1"
       }
-      testplayer1.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer1.send(testActorgame, BoatSetup(placement))
       testplayer2.expectMsgPF(500 millis) {
         case _ => "2"
       }
-      testplayer2.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer2.send(testActorgame, BoatSetup(placement))
       testplayer2.expectMsgPF(500 millis) {
         case _ => "3"
       }
-      testplayer2.send(testActorgame, ThisIsNextMove(1,1))
+      testplayer2.send(testActorgame, Move(1,1))
       testplayer2.expectMsgPF(500 millis) {
         case string: String => {
           println(string)
@@ -151,61 +149,57 @@ class GameActorSpec(_system: ActorSystem)
       val placement = LinearPlayer.placeBoats(Seq(Boat(5), Boat(4), Boat(3), Boat(3), Boat(2)),8)
 
 
-      testProbe.send(testActorgame,WhatIsGameState)
+      testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
-        case GameNotStartedYet(0) => println("gamestate 0")
+        case GameNotStartedYet(Uninitialised) => println("gamestate 0")
       }
       testProbe.send(testActorgame, StartGame(8, testplayer1.ref, testplayer2.ref,Seq(Boat(5), Boat(4), Boat(3), Boat(3), Boat(2))))
-      testProbe.expectMsgPF(500 millis) {
-        case "Game started!" => {
-          println("gameactortest: game started")
-        }
-      }
+      testProbe.expectMsg("Game started!")
       testplayer1.expectMsgPF(500 millis) {
         case PlaceBoats(a,b) => {
           println("gameactor sent message to actor 1 asking for boat placement")
         }
       }
-      testProbe.send(testActorgame,WhatIsGameState)
+      testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
-        case GameNotStartedYet(1) => println("gamestate 1")
+        case GameNotStartedYet(Player1AskedForBoats) => println("gamestate 1")
       }
-      testplayer1.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer1.send(testActorgame, BoatSetup(placement))
       testplayer2.expectMsgPF(500 millis) {
         case PlaceBoats(a,b) => {
           println("gameactor sent message to actor 2 asking for boat placement")
         }
       }
-      testProbe.send(testActorgame,WhatIsGameState)
+      testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
-        case GameNotStartedYet(2) => println("gamestate 2")
+        case GameNotStartedYet(Player2AskedForBoats) => println("gamestate 2")
       }
 
-      testplayer2.send(testActorgame, ThisIsBoatSetup(placement))
+      testplayer2.send(testActorgame, BoatSetup(placement))
       testplayer2.expectMsgPF(500 millis) {
         case GetNextShot(a,b) => {
           println("gameactor sent message to actor 2 asking for next shot")
         }
       }
 
-      testProbe.send(testActorgame,WhatIsGameState)
+      testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
         case boardstates:Map[ActorRef, BoardState] => println("gamestate received from started game")
       }
 
-      testplayer2.send(testActorgame, ThisIsNextMove(1,1))
+      testplayer2.send(testActorgame, Move(1,1))
       testplayer1.expectMsgPF(500 millis) {
         case GetNextShot(a,b) => {
           println("gameactor sent message to actor 1 asking for next shot")
         }
       }
-      testplayer1.send(testActorgame, ThisIsNextMove(1,1))
-      testplayer2.send(testActorgame, ThisIsNextMove(2,1))
-      testplayer1.send(testActorgame, ThisIsNextMove(1,2))
-      testplayer2.send(testActorgame, ThisIsNextMove(3,1))
+      testplayer1.send(testActorgame, Move(1,1))
+      testplayer2.send(testActorgame, Move(2,1))
+      testplayer1.send(testActorgame, Move(1,2))
+      testplayer2.send(testActorgame, Move(3,1))
 
 
-      testProbe.send(testActorgame,WhatIsGameState)
+      testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
         case boardstates:Map[ActorRef, BoardState] => {
           boardstates(testplayer2.ref).history.size should be (3)
