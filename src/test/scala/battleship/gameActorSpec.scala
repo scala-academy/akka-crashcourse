@@ -184,7 +184,7 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
       testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
-        case boardstates:Map[ActorRef, BoardState] => println("gamestate received from started game")
+        case GameStarted(boardstates) => println("gamestate received from started game")
       }
 
       testplayer2.send(testActorgame, Move(1,1))
@@ -201,7 +201,7 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
       testProbe.send(testActorgame,GameStateRequest)
       testProbe.expectMsgPF(500 millis) {
-        case boardstates:Map[ActorRef, BoardState] => {
+        case GameStarted(boardstates) => {
           boardstates(testplayer2.ref).history.size should be (3)
           boardstates(testplayer1.ref).history.size should be (2)
           println("Boardstates have correct number of moves in it")
