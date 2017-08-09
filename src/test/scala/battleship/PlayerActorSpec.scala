@@ -13,7 +13,7 @@ import scala.language.postfixOps
   */
 class PlayerActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
-  def this() = this(ActorSystem("GameManagerSpecActorSystem"))
+  def this() = this(ActorSystem("PlayerActorSpecActorSystem"))
 
   override def afterAll: Unit = {
     shutdown(system)
