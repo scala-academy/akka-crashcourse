@@ -1,8 +1,8 @@
 package battleship
 
 import akka.actor.{Actor, Props}
-import battleship.PlayerActor.BoatPlacementResult
-import battleship.game.{Boat, BoatLocation, ShotResult}
+import battleship.PlayerActor.{BoatPlacementResult, GetNextShot, NextShot, PlaceBoats}
+import battleship.game.{Boat, BoatLocation, LinearPlayer, ShotResult}
 
 /**
   * Created by jordidevos on 28/07/2017.
@@ -21,7 +21,13 @@ object PlayerActor {
 
 class PlayerActor extends Actor {
 
+  //Uses LinearPlayer as base
+
   override def receive: Receive = {
-    case _ => sender() ! BoatPlacementResult(Set.empty)
+    case PlaceBoats(boats, boardSize) => sender() ! BoatPlacementResult(LinearPlayer.placeBoats(boats,boardSize))
+    case GetNextShot(boardSize,shotHistory) => {
+      val nextShot = LinearPlayer.getNextShot(boardSize,shotHistory)
+      sender() ! NextShot(nextShot._1,nextShot._2)
+    }
   }
 }

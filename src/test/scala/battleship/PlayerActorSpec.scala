@@ -23,17 +23,20 @@ class PlayerActorSpec(_system: ActorSystem) extends SpecBase(_system) {
     "return the placement of boats when receiving a PlaceBoats message" in {
       val testProbe = TestProbe()
       val testActor = system.actorOf(props)
-
       testProbe.send(testActor, PlaceBoats(Game.defaultBoatSet, Game.defaultBoardSize))
-
       testProbe.expectMsgPF(500 millis) {
-        case BoatPlacementResult(boatLocations) => // TODO: handling of PlaceBoats to be implemented
+        case BoatPlacementResult(boatLocations) => //
       }
 
     }
     "return the next shot upon receiving a GetNextShot message" in {
-      // TODO
+      val testProbe = TestProbe()
+      val testActor = system.actorOf(props)
+      testProbe.send(testActor, GetNextShot(Game.defaultBoardSize,Seq.empty))
+      testProbe.expectMsgPF(500 millis) {
+        case NextShot(x,y) => //
+      }
     }
-  }
+    }
 }
 
