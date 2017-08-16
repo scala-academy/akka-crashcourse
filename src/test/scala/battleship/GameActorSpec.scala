@@ -90,7 +90,7 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
       val boardstate = BoardState(Set((Boat(1),BoatLocation(0,0,true))),List())
       actor.context.become(actor.gameStarted(testplayer1.ref,1,testplayer1.ref,testplayer2.ref,testplayer2.ref,Map(testplayer1.ref -> boardstate,testplayer2.ref -> boardstate)))
       testplayer2.send(actorRef,Move(0,0))
-      testplayer2.expectMsg("Player " + testplayer2.ref +  " has won!!")
+      testplayer2.expectMsg(GameEnded(testplayer2.ref))
     }
     "If asked for gamestatus it should give it in every gamestate" in {
        //Todo, and implicit in 'Play the games given various commands' 'unit' test
@@ -115,8 +115,8 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
       testplayer2.send(actorRef, BoatSetup(placement))
       testplayer2.expectMsg(GetNextShot(1, boardStates(testplayer2.ref).history))
       testplayer2.send(actorRef, Move(1,1))
-      testplayer2.expectMsg("Player " + testplayer2.ref +  " has won!!")
-      testplayer1.expectMsg("Player " + testplayer2.ref +  " has won!!")
+      testplayer2.expectMsg(GameEnded(testplayer2.ref))
+      testplayer1.expectMsg(GameEnded(testplayer2.ref))
     }
   }
 }

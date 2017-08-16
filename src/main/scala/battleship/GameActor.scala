@@ -34,7 +34,7 @@ object GameActor {
   case object Uninitialised extends GameState
   case object WaitingForBoatPlacement extends GameState
   case class GameStarted(boardStates: BoardStates) extends GameState
-  case object GameEnded extends GameState
+  case class GameEnded(winner: ActorRef) extends GameState
 
   def props: Props = Props(new GameActor)
 
@@ -78,10 +78,8 @@ class GameActor extends Actor with ActorLogging {
     case Move(x, y) if sender() == currentPlayer =>
       val nextBoardStates = boardStates + (currentPlayer -> boardStates(currentPlayer).processShot((x, y)))
       if (nextBoardStates(currentPlayer).allShipsSunk) {
-        //gameStarter ! "The game ended and " + currentPlayer + " has won"
-        val msg = "Player " + currentPlayer + " has won!!"
-        player1 ! msg
-        player2 ! msg
+        player1 ! GameEnded(currentPlayer)
+        player2 ! GameEnded(currentPlayer)
         log.info("Player " + currentPlayer + " has won!!")
         context.become(endgame(currentPlayer, boardStates))
       }
@@ -94,8 +92,8 @@ class GameActor extends Actor with ActorLogging {
   }
 
   def endgame(currentPlayer: ActorRef, boardStates: Map[ActorRef, BoardState]): Receive = {
-    case GameStateRequest => sender() ! boardStates
-    case _ => sender() ! "The game ended and " + currentPlayer + " has won"
+    case GameStateRequest => sender() ! GameEnded(currentPlayer)
+    case _ => sender() ! GameEnded(currentPlayer)
   }
 }
 
