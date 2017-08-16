@@ -3,7 +3,7 @@ package battleship.game
 /**
   * Created by jordidevos on 27/07/2017.
   */
-object LinearPlayer extends Player {
+trait LinearPlayer extends Player {
 
   override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
     val shotNr = shotHistory.size
