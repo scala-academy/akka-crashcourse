@@ -32,9 +32,8 @@ object GameActor {
 
   sealed trait GameState
   case object Uninitialised extends GameState
-  case object PlayerAskedForBoats extends GameState
+  case object WaitingForBoatPlacement extends GameState
   case class GameStarted(boardStates: BoardStates) extends GameState
-  case class ReceivedPlacement(boatSetup: BoatSetup) extends GameState
   case object GameEnded extends GameState
 
   def props: Props = Props(new GameActor)
@@ -58,7 +57,6 @@ class GameActor extends Actor with ActorLogging {
     case StartGame(size, player1, player2, boatSet) => {
       player1 ! PlaceBoats(boatSet, size)
       player2 ! PlaceBoats(boatSet, size)
-      sender() ! "Game started!"
       context.become(gameInit(size, player1, player2))
     }
     case GameStateRequest => sender() ! GameNotStartedYet(Uninitialised)
@@ -67,14 +65,13 @@ class GameActor extends Actor with ActorLogging {
   def gameInit(size: Int, player1: ActorRef, player2: ActorRef, boardStates: BoardStates=Map.empty): Receive = {
     case BoatSetup(placement) if (sender() == player1 || sender() == player2) =>
       val nextBoardStates = boardStates + (sender() -> placeBoats(placement))
-      sender() ! ReceivedPlacement(BoatSetup(placement))
       if (nextBoardStates.size == 2) {
         player2 ! GetNextShot(size, nextBoardStates(player2).history)
         context.become(gameStarted(player2, size, player1, player2, player2, nextBoardStates))
       } else {
         context.become(gameInit(size, player1, player2, nextBoardStates))
       }
-    case GameStateRequest => sender() ! GameNotStartedYet(PlayerAskedForBoats)
+    case GameStateRequest => sender() ! GameNotStartedYet(WaitingForBoatPlacement)
   }
 
   def gameStarted(gameStarter: ActorRef, size: Int, player1: ActorRef, player2: ActorRef, currentPlayer: ActorRef, boardStates: BoardStates): Receive = {
