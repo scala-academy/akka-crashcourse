@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import GameManagerActor._
+import battleship.game.Boat
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -21,6 +22,9 @@ class GameManagerSpec(_system: ActorSystem) extends SpecBase(_system) {
     shutdown(system)
   }
 
+  val boatSet = Seq(Boat(5), Boat(4), Boat(3), Boat(3), Boat(2))
+  val boardSize = 8
+
   "GameManager" should {
     "create a game when receiving a CreateGame message and return the id" in {
       val testProbe = TestProbe()
@@ -32,6 +36,7 @@ class GameManagerSpec(_system: ActorSystem) extends SpecBase(_system) {
         }
       }))
 
+      testProbe.send(testActor, StartManager(boardSize,boatSet))
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
 
       testProbe.expectMsg(500 millis, GameCreated(0))
