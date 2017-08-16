@@ -6,7 +6,8 @@ import scala.util.Random
 /**
   * Created by jordidevos on 27/07/2017.
   */
-
+/*
+//TODO: wat?
 object StupidRandomPlayer {
 
   /**
@@ -17,19 +18,23 @@ object StupidRandomPlayer {
   implicit def randomPlayerInstance(srp: StupidRandomPlayer): Player = new Player {
     import srp._
 
-    override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = placeBoatsRandomly(boats, boardSize)
+    override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = placeBoats(boats, boardSize)
 
-    override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = getNextRandomShot(boardSize, shotHistory)
+    override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = getNextShot(boardSize, shotHistory)
 
     override def name: String = s"RandomPlayer($seed)"
   }
 
 }
-class StupidRandomPlayer(val seed: Int = Random.nextInt) {
+*/
 
+trait StupidRandomPlayer extends Player {
+
+  val seed: Int = Random.nextInt
   val rnd = new Random(seed)
 
-  def placeBoatsRandomly(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = {
+
+  override def placeBoats(boats: Seq[Boat], boardSize: Int): Set[(Boat, BoatLocation)] = {
 
     def canPlace(boatToPlace: Boat, potentialPlacement: BoatLocation, acc: Set[(Boat, BoatLocation)]): Boolean = {
       def coordinatesTaken(x: Int, y: Int) =
@@ -59,13 +64,14 @@ class StupidRandomPlayer(val seed: Int = Random.nextInt) {
     placeBoatsR(boats, Set.empty)
   }
 
-  def getNextRandomShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
+  override def getNextShot(boardSize: Int, shotHistory: Seq[((Int, Int), ShotResult)]): (Int, Int) = {
     val location = (rnd.nextInt(boardSize), rnd.nextInt(boardSize))
     if (shotHistory.exists { case (shotCoordinates, _) => shotCoordinates == location }) {
-      getNextRandomShot(boardSize, shotHistory)
+      getNextShot(boardSize, shotHistory)
     } else {
       location
     }
   }
 
+  override def name: String = "StupidRandomPlayer"
 }

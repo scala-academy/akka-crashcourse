@@ -19,11 +19,11 @@ import scala.language.postfixOps
   */
 class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
 
-    def this() = this(ActorSystem("GameActorSpecActorSystem"))
+  def this() = this(ActorSystem("GameActorSpecActorSystem"))
 
-    override def afterAll: Unit = {
-      shutdown(system)
-    }
+  override def afterAll: Unit = {
+    shutdown(system)
+  }
   "gameActor" should {
 
     "Game should send msg to ask for boat placement from both players when started" in {
@@ -54,7 +54,7 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
       testplayer2.send(actorRef, BoatSetup(placement2))
       testProbe.send(actorRef, GameStateRequest)
       testProbe.expectMsg(GameStarted(boardStates))
-   }
+    }
     "Game should ask player 2 for the first move after game is setup" in {
       val testplayer1 = TestProbe()
       val testplayer2 = TestProbe()
@@ -93,7 +93,7 @@ class GameActorSpec(_system: ActorSystem) extends SpecBase(_system) {
       testplayer2.expectMsg(GameEnded(testplayer2.ref))
     }
     "If asked for gamestatus it should give it in every gamestate" in {
-       //Todo, and implicit in 'Play the games given various commands' 'unit' test
+      //Todo, and implicit in 'Play the games given various commands' 'unit' test
     }
     "Finish the game correctly with 1-tilegame" in {
       val testProbe = TestProbe()
