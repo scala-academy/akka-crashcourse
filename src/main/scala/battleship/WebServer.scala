@@ -4,17 +4,23 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
-import battleship.routes.{BaseRoutes, SimpleRoutes}
+import battleship.GameActor.props
+import battleship.routes._
 
 import scala.io.StdIn
 
-object WebServer extends Directives with SimpleRoutes {
+object WebServer extends Directives{
   def main(args: Array[String]) {
 
     implicit val system = ActorSystem("my-system")
     implicit val materializer = ActorMaterializer()
     // needed for the future flatMap/onComplete in the end
     implicit val executionContext = system.dispatcher
+
+    var gameActor = system.actorOf(GameActor.props) //should be replaced by gamemanager when ready
+    val baseobject = new BaseRoutes(gameActor)
+
+    val routes = baseobject.baseRoutes  ~ baseobject.simpleRoutes ~ baseobject.createGameRoute ~ baseobject.gameStateRequest
 
     val bindingFuture = Http().bindAndHandle(routes, "localhost", 8080)
 
@@ -27,6 +33,6 @@ object WebServer extends Directives with SimpleRoutes {
 
   // Here you can define all the different routes you want to have served by this web server
   // Note that routes might be defined in separated traits like the current case
-  val routes = BaseRoutes.baseRoutes ~ simpleRoutes
+
 
 }
