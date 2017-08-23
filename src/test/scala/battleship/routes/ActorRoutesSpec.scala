@@ -1,21 +1,24 @@
 package battleship.routes
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport.defaultNodeSeqUnmarshaller
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
+import akka.util.Timeout
 import battleship.GameActor.Uninitialised
 import battleship.{GameActor, SpecBase}
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.xml.NodeSeq
+import scala.concurrent.duration._
 
 
 class ActorRoutesSpec extends WordSpec with Matchers with ScalatestRouteTest with ActorRoutes {
   val testProbe = TestProbe()
-  val gameActor = testProbe.ref
+  val gameActor: ActorRef = testProbe.ref
 
+  override def timeOut: Timeout = 100.millisecond
 
   "ActorRoutes" should {
     "send a message to gameActor when creategame is posted, and return a message sent message" in {
@@ -38,7 +41,7 @@ class ActorRoutesSpec extends WordSpec with Matchers with ScalatestRouteTest wit
 
 class ActorRoutesSpec2 extends WordSpec with Matchers with ScalatestRouteTest with ActorRoutes {
   val testProbe = TestProbe()
-  val gameActor = system.actorOf(Props(new GameActor))
+  val gameActor: ActorRef = system.actorOf(Props(new GameActor))
   "ActorRoutes" should {
     "return the gamestate when the gamestate get request is posted" in {
       Get("/gameState") ~> gameStateRequest ~> check {

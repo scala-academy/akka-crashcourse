@@ -14,10 +14,10 @@ import battleship.GameActor
 import akka.util.Timeout
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpResponse, RequestTimeoutException, StatusCodes}
-import akka.http.scaladsl.server.ExceptionHandler
-import spray.json.DefaultJsonProtocol
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -27,29 +27,33 @@ import scala.util.Try
 
 object TestJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   case class Test(size: Int, random: String)
-  implicit val PortofolioFormats = jsonFormat2(Test)
+  implicit val testFormats: RootJsonFormat[Test] = jsonFormat2(Test)
 }
 
 trait ActorRoutes  {
-  implicit def timeOut = Timeout(800 milliseconds)
+  implicit def timeOut: Timeout = 20.seconds
   import battleship.routes.TestJsonSupport._
   val gameActor: ActorRef
 
-  lazy val createGameRoute =
+  lazy val createGameRoute: Route =
     path("createGame") {
       post {
         entity(as[Test]) {
-          test =>
-            gameActor ! GameActor.StartGame(test.size,gameActor,gameActor,Seq(Boat(1)))
-            complete("Message sent to actor" + test.random)
+          test => complete {
+            gameActor ! GameActor.StartGame(test.size, gameActor, gameActor, Seq(Boat(1)))
+            s"Message sent to actor ${test.random}"
+          }
         }
       }
     }
-  lazy val gameStateRequest =
+
+  def gameStateRequest(implicit ec: ExecutionContext): Route =
     path("gameState")  {
       get {
-        val replyF = ask(gameActor,GameStateRequest)
-        onSuccess(replyF) {extraction => complete(extraction.toString)}
+        complete {
+          val state: Future[GameState] = (gameActor ? GameStateRequest).mapTo[GameState]
+          state.map(_.toString)
+        }
       }
   }
 }
