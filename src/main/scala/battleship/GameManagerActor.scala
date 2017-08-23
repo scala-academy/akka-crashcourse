@@ -86,6 +86,8 @@ class GameManagerActor extends Actor {
       gwp.game ! StartGame(state.size,gwp.player1,gwp.player2,state.boats)
       context.become(managerStarted(state.gameStarted(sender(),gameID)))
     }
-    case GameActor.GameEnded(actor) => state.getStarter(sender()) ! GameManagerActor.GameEnded(actor.toString)
+    case GameActor.GameEnded(actor) => {
+      state.getStarter(sender()) ! GameManagerActor.GameEnded("" + actor)
+    }
   }
 }

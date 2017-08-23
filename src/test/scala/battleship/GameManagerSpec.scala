@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import GameManagerActor._
+import battleship.GameActor.StartGame
 import battleship.game.Boat
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -39,11 +40,29 @@ class GameManagerSpec(_system: ActorSystem) extends SpecBase(_system) {
       testProbe.send(testActor, StartManager(boardSize,boatSet))
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
 
-      testProbe.expectMsg(500 millis, GameCreated(0))
+      testProbe.expectMsgPF(500 millis) { case GameCreated(_) => }
+      
       testActorCallCount.get should be(1)
     }
     "return the winner of a game after receiving a PlayGame message" in {
-      // TODO
+      val testProbe = TestProbe()
+      val gameProbe = TestProbe()
+
+      val testActor = system.actorOf(Props(new GameManagerActor with GameActorCreator {
+        // inject the gameProbe
+        override def createGameActor = gameProbe.ref
+      }))
+
+      testProbe.send(testActor, StartManager(boardSize,boatSet))
+      testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
+      testProbe.expectMsg(500 millis, GameCreated(0))
+
+      testProbe.send(testActor, PlayGame(0))
+      gameProbe.send(testActor, GameActor.GameEnded(ActorRef.noSender))
+
+      testProbe.expectMsgPF(500 millis) {
+        case GameManagerActor.GameEnded(_) =>
+      }
     }
   }
 
