@@ -55,13 +55,16 @@ class GameManagerSpec(_system: ActorSystem) extends SpecBase(_system) {
 
       testProbe.send(testActor, StartManager(boardSize,boatSet))
       testProbe.send(testActor, CreateGame(ActorRef.noSender, ActorRef.noSender))
-      testProbe.expectMsg(500 millis, GameCreated(0))
 
-      testProbe.send(testActor, PlayGame(0))
+      val gameID = testProbe.expectMsgPF(500 millis) {
+        case GameManagerActor.GameCreated(x) => x
+      }
+      
+      testProbe.send(testActor, PlayGame(gameID))
       gameProbe.send(testActor, GameActor.GameEnded(ActorRef.noSender))
 
       testProbe.expectMsgPF(500 millis) {
-        case GameManagerActor.GameEnded(_) =>
+        case GameManagerActor.GameEnded(gameID) =>
       }
     }
   }
