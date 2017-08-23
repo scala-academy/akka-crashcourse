@@ -13,7 +13,7 @@ import battleship.game.Boat
   *
   */
 object GameManagerActor {
-  
+
   case class StartManager(size: Int,boatSet: Seq[Boat])
 
   case class CreateGame(player1: ActorRef,player2: ActorRef)
@@ -32,9 +32,9 @@ object GameManagerActor {
     */
   case class GameEnded(winner: String)
 
-  def props: Props = Props(new GameManagerActor with GameCreatorImpl)
+  def props: Props = Props(new GameManagerActor)
 
-  
+
   // Private State management
   private trait GameManagerState {
     def size: Int
@@ -51,7 +51,7 @@ object GameManagerActor {
                                           boats: Seq[Boat],
                                           games: Map[Int,GameWithPlayers],
                                           gamesToStarters: Map[ActorRef,ActorRef]) extends GameManagerState {
-    def createGame(game: ActorRef,p1: ActorRef,p2: ActorRef) = {
+    def createGame(game: ActorRef,p1: ActorRef,p2: ActorRef): (Int, GameManagerStateImpl) = {
       val gameID = games.size
       (gameID,copy(games = this.games + (gameID -> GameWithPlayers(game,p1,p2))))
     }
@@ -67,27 +67,33 @@ object GameManagerActor {
   }
 }
 
-class GameManagerActor extends Actor {
-  this: GameActorCreator =>
+/**
+  * The following trait is used to inject the logic of creating game actors into the GameManagerActor. This allows other
+  * logic to be injected for testing purposes
+  */
+trait GameActorCreator {
+  def createGameActor: ActorRef
+}
+
+class GameManagerActor extends Actor with GameActorCreator {
 
   override def receive: Receive = {
-    case StartManager(size: Int,boatSet: Seq[Boat]) => {
+    case StartManager(size: Int,boatSet: Seq[Boat]) =>
       context.become(managerStarted(createGameManagerState(size,boatSet)))
-    }
   }
   def managerStarted(state: GameManagerState): Receive = {
-    case CreateGame(p1,p2) => {
+    case CreateGame(p1,p2) =>
       val (id,nstate) = state.createGame(createGameActor,p1,p2)
       sender() ! GameCreated(id)
       context.become(managerStarted(nstate))
-    }
-    case PlayGame(gameID) => {
+    case PlayGame(gameID) =>
       val gwp = state.getGameWithPlayers(gameID)
       gwp.game ! StartGame(state.size,gwp.player1,gwp.player2,state.boats)
       context.become(managerStarted(state.gameStarted(sender(),gameID)))
-    }
-    case GameActor.GameEnded(actor) => {
-      state.getStarter(sender()) ! GameManagerActor.GameEnded("" + actor)
-    }
+    case GameActor.GameEnded(winner) =>
+      state.getStarter(sender()) ! GameManagerActor.GameEnded(winner.toString())
   }
+
+  override def createGameActor: ActorRef =
+    context.actorOf(GameActor.props)
 }
