@@ -10,7 +10,7 @@ import battleship.routes._
 import scala.io.StdIn
 
 class BaseRoute (inputGameActor: ActorRef) extends BaseRoutes with ActorRoutes with SimpleRoutes {
-  var gameActor = inputGameActor
+  val gameActor = inputGameActor
 }
 
 object WebServer extends Directives{

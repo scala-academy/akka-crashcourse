@@ -8,7 +8,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import battleship.PlayerActor.{GetNextShot, PlaceBoats}
 import battleship.game._
-import battleship.GameActor.{GameNotStartedYet, _}
+import battleship.GameActor._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._

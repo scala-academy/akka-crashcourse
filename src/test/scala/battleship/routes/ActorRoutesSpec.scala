@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
-import battleship.GameActor.{GameNotStartedYet, Uninitialised}
+import battleship.GameActor.Uninitialised
 import battleship.{GameActor, SpecBase}
 import org.scalatest.{Matchers, WordSpec}
 
@@ -14,7 +14,7 @@ import scala.xml.NodeSeq
 
 class ActorRoutesSpec extends WordSpec with Matchers with ScalatestRouteTest with ActorRoutes {
   val testProbe = TestProbe()
-  var gameActor = testProbe.ref
+  val gameActor = testProbe.ref
 
 
   "ActorRoutes" should {
@@ -27,14 +27,23 @@ class ActorRoutesSpec extends WordSpec with Matchers with ScalatestRouteTest wit
 
     "return a timeout when the gamestate get request is posted to an actor that does not respond" in {
       Get("/gameState") ~> gameStateRequest ~> check {
-        status shouldBe StatusCodes.InternalServerError
+        status shouldEqual StatusCodes.InternalServerError
       }
     }
+/*
+
+*/
+  }
+}
+
+class ActorRoutesSpec2 extends WordSpec with Matchers with ScalatestRouteTest with ActorRoutes {
+  val testProbe = TestProbe()
+  val gameActor = system.actorOf(Props(new GameActor))
+  "ActorRoutes" should {
     "return the gamestate when the gamestate get request is posted" in {
-      gameActor = system.actorOf(Props(new GameActor))
       Get("/gameState") ~> gameStateRequest ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "state = " + GameNotStartedYet(Uninitialised)
+        responseAs[String] shouldBe "Uninitialised"
       }
     }
   }
