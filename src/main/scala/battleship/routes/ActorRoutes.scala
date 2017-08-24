@@ -15,6 +15,7 @@ import akka.util.Timeout
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpResponse, RequestTimeoutException, StatusCodes}
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import battleship.GameManagerActor.{CreateGame, GameCreated, PlayGame, StartManager}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -25,37 +26,78 @@ import scala.util.Try
   * Created by m06f947 on 18-8-2017.
   */
 
-object TestJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  case class Test(size: Int, random: String)
-  implicit val testFormats: RootJsonFormat[Test] = jsonFormat2(Test)
+object StartManagerJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
+  case class StartManagerEndPoint(size: Int, boats: Seq[Int])
+  implicit val StartManagerFormats: RootJsonFormat[StartManagerEndPoint] = jsonFormat2(StartManagerEndPoint)
 }
 
-trait ActorRoutes  {
+trait ActorRoutes {
   implicit def timeOut: Timeout = 20.seconds
-  import battleship.routes.TestJsonSupport._
-  val gameActor: ActorRef
 
-  lazy val createGameRoute: Route =
+  import battleship.routes.StartManagerJsonSupport._
+
+  val gameManagerActor: ActorRef
+  val player1: ActorRef
+  val player2: ActorRef
+
+  def createGameRoute(implicit ec: ExecutionContext): Route =
     path("createGame") {
       post {
-        entity(as[Test]) {
-          test => complete {
-            gameActor ! GameActor.StartGame(test.size, gameActor, gameActor, Seq(Boat(1)))
-            s"Message sent to actor ${test.random}"
+        complete {
+          val gameid = (gameManagerActor ? CreateGame(player1, player2)).mapTo[GameCreated]
+          gameid.map(_.id.toString)
+        }
+      }
+    }
+
+  def playGameRoute: Route =
+    path("playGame") { //add gameid to path
+      post {
+        parameters('gameid.as[Int])
+        { gameid =>
+          complete {
+            gameManagerActor ! PlayGame(gameid)
+            s"Startgame sent to game with id '$gameid'"
           }
         }
       }
     }
 
-  def gameStateRequest(implicit ec: ExecutionContext): Route =
-    path("gameState")  {
-      get {
-        complete {
-          val state: Future[GameState] = (gameActor ? GameStateRequest).mapTo[GameState]
-          state.map(_.toString)
+  def startManagerRoute: Route =
+    path("startManager"){
+      post {
+        entity(as[StartManagerEndPoint]) {
+          startcommand => complete {
+            val boatSet = startcommand.boats.map(size => Boat(size)) //Using this because sprayjson doesnt know Boats.
+            gameManagerActor ! StartManager(startcommand.size,boatSet)
+            "Message sent to start gamemanager"
+          }
+
         }
       }
-  }
+    }
+
 }
 
 
+//  lazy val createGameRoute: Route
+//    path("createGame") {
+//      post {
+//        entity(as[Test]) {
+//          test => complete {
+//            gameActor ! GameActor.StartGame(test.size, gameActor, gameActor, Seq(Boat(1)))
+//            s"Message sent to actor ${test.random}"
+//          }
+//        }
+//      }
+//    }
+//
+//def gameStateRequest(implicit ec: ExecutionContext): Route =
+//path("gameState") {
+//  get {
+//  complete {
+//  val state: Future[GameState] = (gameActor ? GameStateRequest).mapTo[GameState]
+//  state.map(_.toString)
+//}
+//}
+//}

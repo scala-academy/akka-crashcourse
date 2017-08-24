@@ -10,8 +10,10 @@ import battleship.routes._
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
-class BaseRoute (inputGameActor: ActorRef) extends BaseRoutes with ActorRoutes {
-  val gameActor = inputGameActor
+class BaseRoute (inputGameActor: ActorRef, playerOne: ActorRef, playerTwo: ActorRef) extends BaseRoutes with ActorRoutes {
+  val gameManagerActor: ActorRef = inputGameActor
+  val player1: ActorRef = playerOne
+  val player2: ActorRef = playerTwo
 }
 
 object WebServer extends Directives{
@@ -23,12 +25,14 @@ object WebServer extends Directives{
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
     val gameActor = system.actorOf(GameActor.props) //should be replaced by gamemanager when that is ready ready
-    val baseRouteObject = new BaseRoute(gameActor)
+    val player1 = system.actorOf(PlayerActor.linearPlayerProps)
+    val player2 = system.actorOf(PlayerActor.stupidRandomPlayerProps)
+    val baseRouteObject = new BaseRoute(gameActor,player1, player2)
 
     // Here you can define all the different routes you want to have served by this web server.
     // Note that routes might be defined in separated traits like the current case. You have to add the traits to the BaseRoute class as well.
 
-    val routes = baseRouteObject.baseRoutes ~ baseRouteObject.createGameRoute ~ baseRouteObject.gameStateRequest
+    val routes = baseRouteObject.baseRoutes ~ baseRouteObject.createGameRoute ~ baseRouteObject.startManagerRoute ~ baseRouteObject.playGameRoute
 
     val bindingFuture = Http().bindAndHandle(routes, "localhost", 8080)
 
