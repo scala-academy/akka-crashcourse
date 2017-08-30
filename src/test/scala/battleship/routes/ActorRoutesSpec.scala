@@ -1,4 +1,5 @@
 package battleship.routes
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport.defaultNodeSeqUnmarshaller
 import akka.http.scaladsl.model.StatusCodes
@@ -25,16 +26,20 @@ class ActorRoutesSpec extends WordSpec with Matchers with ScalatestRouteTest wit
   val player2: ActorRef = testProbe.ref
 
   override def timeOut: Timeout = 100.millisecond
+
   "ActorRoutes" should {
     "send a message that manager is started when startmanager is used" in {
-      }
+     Post("/startManager",StartManagerEndPoint(8, Seq(5, 4, 3, 2))) ~> startManagerRoute ~> check {
+       status shouldEqual StatusCodes.OK
+       responseAs[String] shouldBe "Message sent to start gamemanager"
+     }
+    }
     "return a message gamestarted when a playgameis issued with an id" in {
-      Post("/playGame?gameid=1", StartManagerEndPoint(8,Seq(5,4,3,2))) ~> playGameRoute ~> check {
+      Post("/playGame?gameid=1") ~> playGameRoute ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] shouldBe s"Startgame sent to game with id '1'"
       }
-        //todo
-      }
+    }
 
     "return a timeout when the creategameroute is posted to an actor that does not respond" in {
       Post("/createGame") ~> createGameRoute ~> check {
@@ -51,10 +56,10 @@ class ActorRoutesSpec2 extends WordSpec with Matchers with ScalatestRouteTest wi
   val player1: ActorRef = testProbe.ref
   val player2: ActorRef = testProbe.ref
   val size2: Int = Game.defaultBoardSize
-  val boats: Seq[Boat] =Game.defaultBoatSet
+  val boats: Seq[Boat] = Game.defaultBoatSet
 
-  gameManagerActor ! StartManager(size2 ,boats)
-//tried to use context.become, but private definitions is preventing me from using it
+  gameManagerActor ! StartManager(size2, boats)
+  //tried to use context.become, but private definitions is preventing me from using it
 
   "ActorRoutes" should {
     "return the gameid when the creategame is posted" in {

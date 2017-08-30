@@ -78,26 +78,3 @@ trait ActorRoutes {
     }
 
 }
-
-
-//  lazy val createGameRoute: Route
-//    path("createGame") {
-//      post {
-//        entity(as[Test]) {
-//          test => complete {
-//            gameActor ! GameActor.StartGame(test.size, gameActor, gameActor, Seq(Boat(1)))
-//            s"Message sent to actor ${test.random}"
-//          }
-//        }
-//      }
-//    }
-//
-//def gameStateRequest(implicit ec: ExecutionContext): Route =
-//path("gameState") {
-//  get {
-//  complete {
-//  val state: Future[GameState] = (gameActor ? GameStateRequest).mapTo[GameState]
-//  state.map(_.toString)
-//}
-//}
-//}

@@ -27,12 +27,12 @@ object WebServer extends Directives{
     val gameActor = system.actorOf(GameActor.props) //should be replaced by gamemanager when that is ready ready
     val player1 = system.actorOf(PlayerActor.linearPlayerProps)
     val player2 = system.actorOf(PlayerActor.stupidRandomPlayerProps)
-    val baseRouteObject = new BaseRoute(gameActor,player1, player2)
+    val baseRoute = new BaseRoute(gameActor,player1, player2)
 
     // Here you can define all the different routes you want to have served by this web server.
     // Note that routes might be defined in separated traits like the current case. You have to add the traits to the BaseRoute class as well.
 
-    val routes = baseRouteObject.baseRoutes ~ baseRouteObject.createGameRoute ~ baseRouteObject.startManagerRoute ~ baseRouteObject.playGameRoute
+    val routes = baseRoute.baseRoutes ~ baseRoute.createGameRoute ~ baseRoute.startManagerRoute ~ baseRoute.playGameRoute
 
     val bindingFuture = Http().bindAndHandle(routes, "localhost", 8080)
 
