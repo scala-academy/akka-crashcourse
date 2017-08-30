@@ -26,15 +26,20 @@ object GameActor {
 
   //Outgoing
 
-  case class GameNotStartedYet(stage: GameState)
+
 
   type BoardStates = Map[ActorRef, BoardState]
 
+
+
   sealed trait GameState
+
   case object Uninitialised extends GameState
   case object WaitingForBoatPlacement extends GameState
   case class GameStarted(boardStates: BoardStates) extends GameState
   case class GameEnded(winner: ActorRef) extends GameState
+
+
 
   def props: Props = Props(new GameActor)
 
@@ -59,7 +64,7 @@ class GameActor extends Actor with ActorLogging {
       player2 ! PlaceBoats(boatSet, size)
       context.become(gameInit(size, player1, player2))
     }
-    case GameStateRequest => sender() ! GameNotStartedYet(Uninitialised)
+    case GameStateRequest => sender() ! Uninitialised
   }
 
   def gameInit(size: Int, player1: ActorRef, player2: ActorRef, boardStates: BoardStates=Map.empty): Receive = {
@@ -71,7 +76,7 @@ class GameActor extends Actor with ActorLogging {
       } else {
         context.become(gameInit(size, player1, player2, nextBoardStates))
       }
-    case GameStateRequest => sender() ! GameNotStartedYet(WaitingForBoatPlacement)
+    case GameStateRequest => sender() ! WaitingForBoatPlacement
   }
 
   def gameStarted(gameStarter: ActorRef, size: Int, player1: ActorRef, player2: ActorRef, currentPlayer: ActorRef, boardStates: BoardStates): Receive = {
