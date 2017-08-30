@@ -46,11 +46,25 @@ object PersistentFSMGameActor {
 class PersistentFSMGameActor extends PersistentFSM[GameState,GameData,GameEvent] {
 
 
+  def placeBoats(placements: Set[(Boat, BoatLocation)]): BoardState = {
+    placements.foldLeft(BoardState.empty) {
+      case (boardState, (boat, location)) => boardState.placeBoat(boat, location)
+    }
+  }
+
+
+
+  def setupBoats (preGameData: GameData,sender: Int, placement: Set[(Boat,BoatLocation)]) : GameData = {
+    val players = preGameData.players
+    GameData(preGameData.boardSize,players + (1-sender -> placeBoats(placement)))
+  }
+
+
   override def applyEvent(event: GameEvent,dataPreEvent: GameData): GameData = {
     event match {
       case GameStartedEvent(boardSize: Int, player1: ActorRef, player2: ActorRef, boatSet: Seq[Boat]) =>
-        GameData(boardSize,Map(0 -> PlayerState(BoardState.empty,player2),1 -> PlayerState(BoardState.empty,player1)))
-      case BoatSetupEvent(placement: Set[(Boat, BoatLocation)]) =>
+        GameData(boardSize,Map(0 -> PlayerState(BoardState.empty,player1),1 -> PlayerState(BoardState.empty,player2)))
+      case BoatSetupEvent(sender: Int,placement: Set[(Boat, BoatLocation)]) => dataPreEvent.copy(players = dataPreEvent.players(1-sender))
       case MoveEvent(x: Int, y: Int) =>
     }
   }
