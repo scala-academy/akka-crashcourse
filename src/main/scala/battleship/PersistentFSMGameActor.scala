@@ -17,7 +17,7 @@ import scala.reflect._
 
 object PersistentFSMGameActor {
 
-  def props(id:String="undefined"): Props = Props(new PersistentFSMGameActor(id))
+  def props(id: String = "undefined"): Props = Props(new PersistentFSMGameActor(id))
 
   sealed trait GameState extends FSMState {
     override def identifier: String = this.getClass.getName
@@ -62,10 +62,12 @@ class PersistentFSMGameActor(var persistence: String) extends PersistentFSM[Game
   //Dont know why I have to use the domaineventclasstag
 
   if (persistence == "undefined") persistence = context.self.path.toString
+
   override def persistenceId = persistence
+
   override def domainEventClassTag: ClassTag[GameEvent] = classTag[GameEvent]
 
-  startWith(Uninitialised, GameData(0, 0, Map(),Map()))
+  startWith(Uninitialised, GameData(0, 0, Map(), Map()))
 
   def placeBoats(placements: Set[(Boat, BoatLocation)]): BoardState = {
     placements.foldLeft(BoardState.empty) {
@@ -92,55 +94,43 @@ class PersistentFSMGameActor(var persistence: String) extends PersistentFSM[Game
 
   when(Uninitialised) {
     case Event(InitGame(boardSize, player1, player2, boatSet), _) =>
-      println("Initgame received")  //TODO: Remove, for debugging only
-      println(self.path.toString())
       player1 ! PlaceBoats(boatSet, boardSize)
       player2 ! PlaceBoats(boatSet, boardSize)
       goto(WaitingForBoatPlacement) applying InitialiseEvent(boardSize, player1, player2, boatSet)
-    case Event(GameStateRequest, _) => {
-      println(self.path.toString())
-      stay replying(this.stateName, this.stateData)
-    }
+    case Event(GameStateRequest, _) => stay replying(this.stateName, this.stateData)
   }
 
   when(WaitingForBoatPlacement) {
     case Event(BoatSetup(placement: Set[(Boat, BoatLocation)]), gameData) => {
-      println("Boatsetup received") //TODO: Remove, for debugging only
       val copyGameData = setupBoats(gameData, gameData.actorRefMap(sender()), placement)
       if ((copyGameData.playersStates(0).boardState == BoardState.empty) || (copyGameData.playersStates(1).boardState == BoardState.empty)) {
-        println("Need more Boatsetup") //TODO: Remove, for debugging only
         stay applying BoatSetupEvent(gameData.actorRefMap(sender()), placement)
       }
       else {
-        println("last Boatsetup received") //TODO: Remove, for debugging only
         gameData.playersStates(1).actorRef ! GetNextShot(gameData.boardSize, gameData.playersStates(1).boardState.history)
         goto(RunningGame) applying BoatSetupEvent(gameData.actorRefMap(sender()), placement)
       }
     }
-    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
+    case Event(GameStateRequest, _) => stay replying(this.stateName, this.stateData)
   }
 
   when(RunningGame) {
     case Event(Move(x, y), gameData) => {
-      println("Move received") //TODO: Remove, for debugging only
       val cp: Int = gameData.currentPlayer
       val ps = gameData.playersStates
       val copyGameData = gameData.copy(playersStates = Map(1 - cp -> ps(1 - cp), cp -> ps(cp).copy(boardState = ps(cp).boardState.processShot(x, y))))
       if (copyGameData.playersStates(gameData.currentPlayer).boardState.allShipsSunk) {
-        println("Final Sink!") //TODO: Remove, for debugging only
         goto(GameEnded) applying MoveEvent(x, y) replying GameEnded
       }
       else {
-        println("Final Sink!") //TODO: Remove, for debugging only
         gameData.playersStates(gameData.currentPlayer).actorRef ! GetNextShot(gameData.boardSize, gameData.playersStates(gameData.currentPlayer).boardState.history)
         stay applying MoveEvent(x, y)
       }
     }
-    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
+    case Event(GameStateRequest, _) => stay replying(this.stateName, this.stateData)
   }
 
   when(GameEnded) {
-    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
+    case Event(GameStateRequest, _) => stay replying(this.stateName, this.stateData)
   }
-
 }
