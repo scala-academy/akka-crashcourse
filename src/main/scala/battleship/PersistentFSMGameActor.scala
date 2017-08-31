@@ -9,6 +9,7 @@ import akka.persistence.fsm.PersistentFSM.FSMState
 import battleship.PersistentFSMGameActor.{GameState, Uninitialised, _}
 
 import scala.reflect.ClassTag
+import scala.reflect._
 
 /**
   * Created by M06F947 on 30-8-2017.
@@ -16,7 +17,7 @@ import scala.reflect.ClassTag
 
 object PersistentFSMGameActor {
 
-  def props: Props = Props(new PersistentFSMGameActor)
+  def props(id:String="undefined"): Props = Props(new PersistentFSMGameActor(id))
 
   sealed trait GameState extends FSMState {
     override def identifier: String = this.getClass.getName
@@ -45,8 +46,6 @@ object PersistentFSMGameActor {
 
   case class MoveEvent(x: Int, y: Int) extends GameEvent
 
-  case class GameEndedEvent(winner: ActorRef) extends GameEvent
-
   sealed trait GameCommand
 
   case class InitGame(boardSize: Int, player1: ActorRef, player2: ActorRef, boatSet: Seq[Boat]) extends GameCommand
@@ -59,10 +58,12 @@ object PersistentFSMGameActor {
 
 }
 
-class PersistentFSMGameActor(implicit val domainEventClassTag: ClassTag[GameEvent]) extends PersistentFSM[GameState, GameData, GameEvent] {
+class PersistentFSMGameActor(var persistence: String) extends PersistentFSM[GameState, GameData, GameEvent] {
   //Dont know why I have to use the domaineventclasstag
 
-  override def persistenceId = context.self.path.toString
+  if (persistence == "undefined") persistence = context.self.path.toString
+  override def persistenceId = persistence
+  override def domainEventClassTag: ClassTag[GameEvent] = classTag[GameEvent]
 
   startWith(Uninitialised, GameData(0, 0, Map(),Map()))
 
@@ -91,33 +92,55 @@ class PersistentFSMGameActor(implicit val domainEventClassTag: ClassTag[GameEven
 
   when(Uninitialised) {
     case Event(InitGame(boardSize, player1, player2, boatSet), _) =>
-      println("Initgame received")
+      println("Initgame received")  //TODO: Remove, for debugging only
+      println(self.path.toString())
       player1 ! PlaceBoats(boatSet, boardSize)
       player2 ! PlaceBoats(boatSet, boardSize)
       goto(WaitingForBoatPlacement) applying InitialiseEvent(boardSize, player1, player2, boatSet)
+    case Event(GameStateRequest, _) => {
+      println(self.path.toString())
+      stay replying(this.stateName, this.stateData)
+    }
   }
 
   when(WaitingForBoatPlacement) {
     case Event(BoatSetup(placement: Set[(Boat, BoatLocation)]), gameData) => {
+      println("Boatsetup received") //TODO: Remove, for debugging only
       val copyGameData = setupBoats(gameData, gameData.actorRefMap(sender()), placement)
-      if ((copyGameData.playersStates(0).boardState == BoardState.empty) || (copyGameData.playersStates(1).boardState == BoardState.empty))
+      if ((copyGameData.playersStates(0).boardState == BoardState.empty) || (copyGameData.playersStates(1).boardState == BoardState.empty)) {
+        println("Need more Boatsetup") //TODO: Remove, for debugging only
         stay applying BoatSetupEvent(gameData.actorRefMap(sender()), placement)
-      else
+      }
+      else {
+        println("last Boatsetup received") //TODO: Remove, for debugging only
+        gameData.playersStates(1).actorRef ! GetNextShot(gameData.boardSize, gameData.playersStates(1).boardState.history)
         goto(RunningGame) applying BoatSetupEvent(gameData.actorRefMap(sender()), placement)
+      }
     }
+    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
   }
 
   when(RunningGame) {
     case Event(Move(x, y), gameData) => {
+      println("Move received") //TODO: Remove, for debugging only
       val cp: Int = gameData.currentPlayer
       val ps = gameData.playersStates
       val copyGameData = gameData.copy(playersStates = Map(1 - cp -> ps(1 - cp), cp -> ps(cp).copy(boardState = ps(cp).boardState.processShot(x, y))))
-      if (copyGameData.playersStates(gameData.currentPlayer).boardState.allShipsSunk)
-        goto(GameEnded) applying MoveEvent(x,y)
-      else
-        stay applying MoveEvent(x,y)
-
+      if (copyGameData.playersStates(gameData.currentPlayer).boardState.allShipsSunk) {
+        println("Final Sink!") //TODO: Remove, for debugging only
+        goto(GameEnded) applying MoveEvent(x, y) replying GameEnded
+      }
+      else {
+        println("Final Sink!") //TODO: Remove, for debugging only
+        gameData.playersStates(gameData.currentPlayer).actorRef ! GetNextShot(gameData.boardSize, gameData.playersStates(gameData.currentPlayer).boardState.history)
+        stay applying MoveEvent(x, y)
+      }
     }
+    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
+  }
+
+  when(GameEnded) {
+    case Event(GameStateRequest, _) => stay replying (this.stateName,this.stateData)
   }
 
 }
