@@ -1,6 +1,6 @@
 package battleship
 
-import akka.actor.{Actor, ActorPath, ActorRef}
+import akka.actor.{Actor, ActorPath, ActorRef, Props}
 import akka.persistence.fsm.PersistentFSM
 import akka.persistence.fsm.PersistentFSM.FSMState
 import battleship.GameManagerPersistentFSM._
@@ -9,7 +9,7 @@ import battleship.game.Boat
 import scala.reflect.ClassTag
 
 object GameManagerPersistentFSM {
-
+  
   sealed trait Command
 
   case class StartManager(size: Int, boatSet: Seq[Boat]) extends Command
@@ -86,15 +86,14 @@ object GameManagerPersistentFSM {
   }
 }
 
-class GameManagerPersistentFSM extends PersistentFSM[GameManagerState,GameManagerData,GameManagerEvent]
+case class GameManagerPersistentFSM(id: String) extends PersistentFSM[GameManagerState,GameManagerData,GameManagerEvent]
     with GameActorCreator {
 
   startWith(Uninitialized, NoData)
 
-  // WHERE DO WE MANAGE IDs?
-  lazy val persistenceId = "What to do"
+  def persistenceId = "GameManagerPersistentFSM:"+id
 
-  override def domainEventClassTag: ClassTag[GameManagerEvent] = ClassTag(classOf[GameManagerEvent])
+  def domainEventClassTag: ClassTag[GameManagerEvent] = ClassTag(classOf[GameManagerEvent])
 
   when(Uninitialized) {
     case Event(StartManager(size: Int, boatSet: Seq[Boat]),_) => goto(Started) applying ManagerStarted(size, boatSet)
